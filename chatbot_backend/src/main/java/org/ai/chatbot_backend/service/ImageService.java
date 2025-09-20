@@ -1,4 +1,4 @@
-package org.ai.chatbot_backend;
+package org.ai.chatbot_backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.azure.openai.AzureOpenAiImageModel;

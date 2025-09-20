@@ -1,4 +1,4 @@
-package org.ai.chatbot_backend;
+package org.ai.chatbot_backend.service;
 
 import com.azure.core.exception.HttpResponseException;
 import lombok.RequiredArgsConstructor;
