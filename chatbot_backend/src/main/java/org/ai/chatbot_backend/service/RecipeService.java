@@ -1,6 +1,8 @@
 package org.ai.chatbot_backend.service;
 
+import com.azure.core.exception.HttpResponseException;
 import lombok.RequiredArgsConstructor;
+import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -15,7 +17,7 @@ public class RecipeService {
 
     public String createRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
         var template = """
-                I want to create using the following ingredients: {ingredients}.
+                I want to create a recipe using the following ingredients: {ingredients}.
                 The cuisine type i prefer is: {cuisine}.
                 Please consider the following dietary restrictions: {dietaryRestrictions}.
                 Please provide me with a complete recipe including title, list of ingredients and cooking instructions.
@@ -29,6 +31,11 @@ public class RecipeService {
         );
 
         Prompt prompt = promptTemplate.create(params);
-        return chatModel.call(prompt).getResult().getOutput().getText();
+
+        try {
+            return chatModel.call(prompt).getResult().getOutput().getText();
+        } catch (HttpResponseException e) {
+            throw new InappropriateRequestRefusalException("I'm sorry, but I can't assist with that request.");
+        }
     }
 }

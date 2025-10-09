@@ -2,10 +2,8 @@ package org.ai.chatbot_backend.service;
 
 import com.azure.core.exception.HttpResponseException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.azure.openai.AzureOpenAiChatOptions;
+import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,31 +11,19 @@ import org.springframework.stereotype.Service;
 public class ChatService {
     private final ChatModel chatModel;
 
-    public String getResponse(String prompt) {
-        try {
-            return chatModel.call(prompt);
-        }
-        //a filter was triggered
-        catch (HttpResponseException e) {
-            return "Sorry, I can't help with that request";
-        }
-    }
+    private static final String SYSTEM_PROMPT =
+            "You are a helpful assistant that only answers questions about food, recipes, ingredients, and cooking. " +
+                    "If the question is not about food, politely respond:" +
+                    "'Sorry, I can only answer questions about food.'";
 
-    public String getResponseOptions(String prompt) {
+    public String getResponse(String userPrompt) {
+        String fullPrompt = SYSTEM_PROMPT + "\nUser: " + userPrompt;
         try {
-            ChatResponse response = chatModel.call(
-                    new Prompt(
-                            prompt,
-                            AzureOpenAiChatOptions.builder()
-                                    .deploymentName("gpt-4.1-mini")
-                                    .temperature(0.4)
-                                    .build()
-                    ));
-            return response.getResult().getOutput().getText();
+            return chatModel.call(fullPrompt);
         }
-        //a filter was triggered
+        //an inappropriate content filter was triggered
         catch (HttpResponseException e) {
-            return "Sorry, I can't help with that request";
+            throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
         }
     }
 }
