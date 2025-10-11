@@ -33,7 +33,7 @@ function App() {
           Generate a Recipe
         </button>
 
-        <div>
+        <div className="food-tabs">
           {activeTab === "food-image-generator" && <FoodImageGenerator />}
           {activeTab === "food-chat" && <FoodChat />}
           {activeTab === "recipe-generator" && <RecipeGenerator />}
