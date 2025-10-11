@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import "./App.css";
+import FoodImageGenerator from "./components/FoodImageGenerator";
+import FoodChat from "./components/FoodChat";
+import RecipeGenerator from "./components/RecipeGenerator";
 
 function App() {
   const [activeTab, setActiveTab] = useState("food-image-generator");
@@ -31,11 +34,9 @@ function App() {
         </button>
 
         <div>
-          {activeTab === "food-image-generator" && (
-            <h2>Food Image Generator</h2>
-          )}
-          {activeTab === "food-chat" && <h2>Hello, User</h2>}
-          {activeTab === "recipe-generator" && <h2>Recipe Generator</h2>}
+          {activeTab === "food-image-generator" && <FoodImageGenerator />}
+          {activeTab === "food-chat" && <FoodChat />}
+          {activeTab === "recipe-generator" && <RecipeGenerator />}
         </div>
       </div>
     </>
