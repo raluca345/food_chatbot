@@ -17,10 +17,12 @@ function FoodImageGenerator() {
 
   const [imageUrls, setImageUrls] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleGenerateImage = async () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
+    setError("");
     setLoading(true);
     try {
       const query = new URLSearchParams(params);
@@ -28,10 +30,14 @@ function FoodImageGenerator() {
         `http://localhost:8080/api/v1/food-images?${query.toString()}`,
         { method: "POST" }
       );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
       const url = await response.text();
       setImageUrls([url]);
     } catch (err) {
       console.error("Error generating image: ", err);
+      setError("Failed to generate image.");
     } finally {
       setLoading(false);
     }
@@ -39,6 +45,7 @@ function FoodImageGenerator() {
 
   return (
     <div className="tab-content">
+      {error && <div className="error-message">{error}</div>}
       {loading && <Spinner />}
       <div className="single-image">
         {imageUrls.length > 0 ? (

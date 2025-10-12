@@ -136,3 +136,16 @@ label {
   border: 1px solid #ccc;
   margin-bottom: 20px;
 }
+
+.error-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+  background-color: #e74c3c;
+  margin-bottom: 40px;
+  font-weight: bold;
+  border-radius: 5px;
+  height: 40px;
+}
