@@ -8,15 +8,13 @@ import org.ai.chatbot_backend.service.RecipeService;
 import org.springframework.ai.image.ImageResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
+@CrossOrigin(origins = "http://localhost:5173")
 public class GenAIController {
     private final ChatService chatService;
     private final ImageService imageService;
@@ -45,8 +43,7 @@ public class GenAIController {
     @PostMapping("food-images")
     public ResponseEntity<String> generateFoodImage(@RequestParam(defaultValue = "") String name,
                                     @RequestParam String style,
-                                    @RequestParam int height,
-                                    @RequestParam int width,
+                                    @RequestParam(defaultValue = "1024x1024") String size,
                                     @RequestParam(required = false) String course,
                                     @RequestParam(required = false) String mainIngredient,
                                     @RequestParam(required = false) String dishType) {
@@ -55,7 +52,6 @@ public class GenAIController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sorry, the picked style is invalid");
         }
 
-        String size = width + "x" + height;
         if (!size.equalsIgnoreCase("1024x1024") && !size.equalsIgnoreCase("1792x1024") &&
                 !size.equalsIgnoreCase("1024x1792")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sorry, the picked size is invalid");
@@ -63,7 +59,12 @@ public class GenAIController {
 
         try {
             ImageResponse imageResponse = imageService.generateDishImageFromParams(
-                    name, course, mainIngredient, dishType, style, height, width);
+                    name, course, mainIngredient, dishType, style, size);
+
+            if (imageResponse.getResults().isEmpty()) {
+                throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
+            }
+
             return ResponseEntity.ok(imageResponse.getResult().getOutput().getUrl());
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
