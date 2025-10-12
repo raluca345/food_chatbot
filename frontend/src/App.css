@@ -170,6 +170,7 @@ button.primary:hover {
   font-size: calc(12px + 0.5vw);
   line-height: 1.6;
   border: 1px solid #ccc;
+  margin-top: 20px;
   margin-bottom: 20px;
   max-height: 360px;
   padding: 12px;
