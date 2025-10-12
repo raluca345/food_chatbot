@@ -1,6 +1,7 @@
 package org.ai.chatbot_backend.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.ChatService;
 import org.ai.chatbot_backend.service.ImageService;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
@@ -65,6 +67,7 @@ public class GenAIController {
                 throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
             }
 
+            log.info(imageResponse.getResult().getOutput().getUrl());
             return ResponseEntity.ok(imageResponse.getResult().getOutput().getUrl());
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

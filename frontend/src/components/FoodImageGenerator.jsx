@@ -19,6 +19,8 @@ function FoodImageGenerator() {
   const [loading, setLoading] = useState(false);
 
   const handleGenerateImage = async () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
     setLoading(true);
     try {
       const query = new URLSearchParams(params);
@@ -37,6 +39,14 @@ function FoodImageGenerator() {
 
   return (
     <div className="tab-content">
+      {loading && <Spinner />}
+      <div className="single-image">
+        {imageUrls.length > 0 ? (
+          <img src={imageUrls[0]} alt="Generated food" />
+        ) : (
+          <div className="empty-image-slot" />
+        )}
+      </div>
       <div className="form-row">
         <label>Name</label>
         <input
@@ -89,18 +99,6 @@ function FoodImageGenerator() {
         />
       </div>
       <button onClick={handleGenerateImage}>Generate Image</button>
-      {loading && <Spinner />}
-      <div className="image-grid">
-        {imageUrls.map((url, index) => (
-          <img key={index} src={url} alt={`Generated food ${index}`} />
-        ))}
-        {[...Array(4 - imageUrls.length)].map((_, index) => (
-          <div
-            key={index + imageUrls.length}
-            className="empty-image-slot"
-          ></div>
-        ))}
-      </div>
     </div>
   );
 }
