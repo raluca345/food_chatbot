@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Spinner from "./Spinner";
+import Spinner from "../commons/Spinner";
 import ReactMarkdown from "react-markdown";
 
 function RecipeGenerator() {
