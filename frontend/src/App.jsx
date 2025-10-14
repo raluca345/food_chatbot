@@ -12,6 +12,7 @@ import FoodChat from "./components/home/FoodChat";
 import RecipeGenerator from "./components/home/RecipeGenerator";
 import SignUpPage from "./components/auth/SignUpPage";
 import LoginPage from "./components/auth/LoginPage";
+import NotFound from "./components/NotFound";
 
 function App() {
   const navigate = useNavigate();
@@ -86,6 +87,7 @@ function App() {
           <Route path="/home/recipe-generator" element={<RecipeGenerator />} />
           <Route path="/sign-up" element={<SignUpPage />}></Route>
           <Route path="/login" element={<LoginPage />}></Route>
+          <Route path="*" element={<NotFound />}></Route>
         </Routes>
       </div>
     </div>
