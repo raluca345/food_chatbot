@@ -101,22 +101,21 @@ function FoodChat() {
             messages.map((msg) => (
               <div
                 key={msg.id}
-                className={msg.id === lastMessageId ? "new-message" : ""}
-                style={{
-                  marginBottom: 12,
-                  padding: 8,
-                  background: msg.role === "assistant" ? "#fff" : "#f8f8f8",
-                  borderRadius: 6,
-                }}
+                className={
+                  (msg.id === lastMessageId ? "new-message " : "") +
+                  (msg.role === "assistant"
+                    ? "message assistant"
+                    : "message user")
+                }
               >
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>
+                <div className="message-meta">
                   {msg.role === "assistant" ? "Assistant" : "You"}
                 </div>
-                <div>
+                <div className="message-body">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
                 {msg.role === "assistant" && (
-                  <div style={{ marginTop: 8, textAlign: "right" }}>
+                  <div className="reply-btn-wrap">
                     <button
                       onClick={() => {
                         // prepend each line with '> ' to create a Markdown quote

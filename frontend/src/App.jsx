@@ -12,6 +12,8 @@ import FoodChat from "./components/home/FoodChat";
 import RecipeGenerator from "./components/home/RecipeGenerator";
 import SignUpPage from "./components/auth/SignUpPage";
 import LoginPage from "./components/auth/LoginPage";
+import { FaUtensils } from "react-icons/fa";
+import { GiCookingPot } from "react-icons/gi";
 import NotFound from "./components/NotFound";
 
 function App() {
@@ -66,10 +68,10 @@ function App() {
 
           <div className="auth-links">
             <Link to="/login" className="auth-link login-link">
-              Log In
+              <FaUtensils className="icon-inline" /> Log In
             </Link>
             <Link to="/sign-up" className="auth-link signup-link">
-              Sign Up
+              <GiCookingPot className="icon-inline" /> Sign Up
             </Link>
           </div>
         </header>
