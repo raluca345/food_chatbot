@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Spinner from "../commons/Spinner";
+import "./FoodImageGenerator.css";
 
 function FoodImageGenerator() {
   const [params, setParams] = useState({

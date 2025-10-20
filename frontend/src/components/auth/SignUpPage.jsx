@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "./SignUpPage.css";
+import { useNavigate, Link } from "react-router-dom";
+import "./AuthPage.css";
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -61,7 +61,10 @@ const SignUpPage = () => {
           />
         </div>
         <p>
-          Already have an account? <a href="">Log In</a>
+          Already have an account?{" "}
+          <Link to="/login" className="login-link">
+            Log In
+          </Link>
         </p>
         <div className="user-form-actions">
           <button onClick={returnToHome} className="sign-up-cancel-btn">

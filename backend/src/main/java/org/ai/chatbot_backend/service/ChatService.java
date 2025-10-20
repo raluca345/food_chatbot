@@ -4,25 +4,45 @@ import com.azure.core.exception.HttpResponseException;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class ChatService {
     private final ChatModel chatModel;
+    private final RecipeFileService recipeFileService;
 
-    private static final String SYSTEM_PROMPT =
-            "You are a helpful assistant that only answers questions about food, recipes, ingredients, and cooking. " +
-                    "If the question is not about food, politely respond:" +
-                    "'Sorry, I can only answer questions about food.'";
+    @Value("${app.backendBaseUrl:http://localhost:8080}")
+    private String backendBaseUrl;
+
+    private String systemPrompt() {
+        return "You are a helpful assistant that only answers questions about food, recipes, ingredients, and cooking. " +
+                "If the user asks to download a recipe, always use the backend API base URL: [Download Recipe](" + backendBaseUrl +
+                "/api/v1/recipes/download/{recipeId}). " +
+                "Never use the frontend domain. " +
+                "If the question is not about food, politely respond: 'Sorry, I can only answer questions about food.'";
+    }
+
+    private boolean looksLikeRecipe(String text) {
+        return text.toLowerCase().contains("ingredients");
+    }
+
+    public String createDownloadableRecipe(String recipeText) {
+        Long id = recipeFileService.storeRecipeText(recipeText);
+        return recipeFileService.getDownloadMarkdown(id, backendBaseUrl);
+    }
 
     public String getResponse(String userPrompt) {
-        String fullPrompt = SYSTEM_PROMPT + "\nUser: " + userPrompt;
+        String fullPrompt = systemPrompt() + "\nUser: " + userPrompt;
         try {
-            return chatModel.call(fullPrompt);
-        }
-        //an inappropriate content filter was triggered
-        catch (HttpResponseException e) {
+            String modelOut = chatModel.call(fullPrompt);
+            if (looksLikeRecipe(modelOut)) {
+                String mdLink = createDownloadableRecipe(modelOut);
+                modelOut = modelOut + "\n\nYou can download this recipe here: " + mdLink;
+            }
+            return modelOut;
+        } catch (HttpResponseException e) {
             throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
         }
     }

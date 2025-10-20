@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import Spinner from "../commons/Spinner";
+import "./FoodChat.css";
 import ReactMarkdown from "react-markdown";
+import {
+  rehypePlugins,
+  markdownComponents,
+} from "../../utils/sanitizeMarkdown";
 
 function FoodChat() {
   const [prompt, setPrompt] = useState("");
@@ -85,6 +90,12 @@ function FoodChat() {
           placeholder="Ask about food, recipes, ingredients..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              askFoodAi();
+            }
+          }}
         />
         <div className="chat-actions">
           <button className="primary" onClick={askFoodAi}>
@@ -112,7 +123,12 @@ function FoodChat() {
                   {msg.role === "assistant" ? "Assistant" : "You"}
                 </div>
                 <div className="message-body">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown
+                    rehypePlugins={rehypePlugins}
+                    components={markdownComponents}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
                 </div>
                 {msg.role === "assistant" && (
                   <div className="reply-btn-wrap">

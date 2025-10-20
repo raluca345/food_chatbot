@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import Spinner from "../commons/Spinner";
 import ReactMarkdown from "react-markdown";
+import {
+  rehypePlugins,
+  markdownComponents,
+} from "../../utils/sanitizeMarkdown";
+import "./RecipeGenerator.css";
 
 function RecipeGenerator() {
   const [params, setParams] = useState({
@@ -64,7 +69,12 @@ function RecipeGenerator() {
       {loading && <Spinner />}
       <div className="output">
         <div className="recipe-text">
-          <ReactMarkdown>{recipe}</ReactMarkdown>
+          <ReactMarkdown
+            rehypePlugins={rehypePlugins}
+            components={markdownComponents}
+          >
+            {recipe}
+          </ReactMarkdown>
         </div>
       </div>
     </div>

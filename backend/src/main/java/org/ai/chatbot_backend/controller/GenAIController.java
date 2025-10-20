@@ -5,8 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.ChatService;
 import org.ai.chatbot_backend.service.ImageService;
+import org.ai.chatbot_backend.service.RecipeFileService;
 import org.ai.chatbot_backend.service.RecipeService;
 import org.springframework.ai.image.ImageResponse;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,7 @@ public class GenAIController {
     private final ChatService chatService;
     private final ImageService imageService;
     private final RecipeService recipeService;
+    private final RecipeFileService recipeFileService;
 
     @PostMapping("messages")
     public ResponseEntity<String> getResponse(@RequestParam String prompt) {
@@ -41,6 +45,16 @@ public class GenAIController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+    @GetMapping("/recipes/download/{id}")
+    public ResponseEntity<Resource> downloadRecipe(@PathVariable Long id) {
+        Resource resource = recipeFileService.getRecipeFile(id);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + id + ".txt")
+                .body(resource);
+    }
+
 
     @PostMapping("food-images")
     public ResponseEntity<String> generateFoodImage(@RequestParam(defaultValue = "") String name,
