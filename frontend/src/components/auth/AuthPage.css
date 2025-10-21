@@ -1,0 +1,110 @@
+:root {
+  --accent: #743f10;
+  --accent-2: #f08a5d;
+  --accent-3: #a56b3c;
+  --muted: #6b6b6b;
+}
+
+.user-form h2 {
+  margin-top: -40px;
+  margin-bottom: 50px;
+}
+
+.user-form {
+  max-width: 720px;
+  margin: 60px auto;
+  padding: 24px 28px;
+  box-sizing: border-box;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.user-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.user-form-row label {
+  text-align: left;
+  font-weight: 700;
+}
+
+.user-form-row input {
+  width: 100%;
+  max-width: 360px;
+  height: 40px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.user-form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.sign-up-cancel-btn {
+  background: #f0f0f0;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sign-up-cancel-btn:hover {
+  background: #c0392b;
+  color: #fff0f0;
+}
+
+.sign-up-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sign-up-btn:hover {
+  background: var(--accent);
+}
+
+.login-link {
+  text-decoration: none;
+}
+
+.login-link:link {
+  color: var(--accent-3);
+}
+
+.login-link:visited {
+  color: var(--muted);
+}
+
+.login-link:hover {
+  color: var(--accent);
+}
+
+.login-link:active {
+  color: var(--accent-2);
+}
+
+@media (max-width: 720px) {
+  .user-form {
+    margin: 28px 16px;
+    padding: 16px;
+  }
+  .user-form-row input {
+    max-width: 100%;
+  }
+}

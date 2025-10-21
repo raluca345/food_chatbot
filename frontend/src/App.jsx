@@ -40,10 +40,11 @@ function App() {
 
   const activeTab = getActiveTab();
   const isSignUpPage = location.pathname === "/sign-up";
+  const isLoginPage = location.pathname === "/login";
 
   return (
     <div className="App">
-      {!isSignUpPage && (
+      {!isSignUpPage && !isLoginPage && (
         <header className="app-header">
           <nav className="tab-nav">
             <button
