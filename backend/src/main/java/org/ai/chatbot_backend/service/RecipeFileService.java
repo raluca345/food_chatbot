@@ -1,7 +1,7 @@
 package org.ai.chatbot_backend.service;
 
 import lombok.RequiredArgsConstructor;
-import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
+import org.ai.chatbot_backend.exception.ResourceNotFound;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ public class RecipeFileService {
     public Resource getRecipeFile(Long id) {
         String recipeText = storage.get(id);
         if (recipeText == null) {
-            throw new InappropriateRequestRefusalException("Recipe not found.");
+            throw new ResourceNotFound("Recipe not found.");
         }
 
         try {

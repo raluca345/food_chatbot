@@ -18,8 +18,8 @@ public class ChatService {
 
     private String systemPrompt() {
         return "You are a helpful assistant that only answers questions about food, recipes, ingredients, and cooking. " +
-                "If the user asks to download a recipe, always use the backend API base URL: [Download Recipe](" + backendBaseUrl +
-                "/api/v1/recipes/download/{recipeId}). " +
+                "If the user asks to download a recipe, always use the backend API base URL: [Download Recipe]("
+                + backendBaseUrl + "/api/v1/recipes/download/{recipeId}). " +
                 "Never use the frontend domain. " +
                 "If the question is not about food, politely respond: 'Sorry, I can only answer questions about food.'";
     }
