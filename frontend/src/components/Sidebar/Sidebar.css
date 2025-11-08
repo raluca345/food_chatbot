@@ -1,0 +1,114 @@
+:root {
+  --sb-ease: cubic-bezier(0.22, 0.85, 0.28, 1);
+  --sb-dur: 480ms;
+  --sb-char-in-dur: 520ms;
+  --sb-char-out-dur: 320ms;
+  --sb-divider-dur: 520ms;
+}
+
+.sidebar-toggle {
+  position: fixed;
+  width: 34px;
+  height: 34px;
+  top: 26px;
+  left: 18px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--sb-dur) var(--sb-ease),
+    left var(--sb-dur) var(--sb-ease);
+  z-index: 1200;
+}
+
+.sidebar-toggle.open {
+  transform: translateX(124px);
+}
+
+.sidebar-toggle.open svg {
+  transform: translateX(6px);
+  transition: transform var(--sb-dur) var(--sb-ease);
+}
+
+.sidebar-toggle:focus {
+  outline: 3px solid rgba(171, 108, 235, 0.18);
+}
+
+.sidebar-group {
+  position: fixed;
+  top: 86px;
+  left: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 14px;
+  width: auto;
+  padding: 6px 0;
+  border: none;
+  transition: transform var(--sb-dur) var(--sb-ease),
+    left var(--sb-dur) var(--sb-ease);
+  z-index: 1200;
+}
+
+.sidebar-group > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.sidebar-group .sidebar-label {
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity var(--sb-dur) var(--sb-ease),
+    transform var(--sb-dur) var(--sb-ease);
+  pointer-events: none;
+}
+
+.sidebar.open .sidebar-group .sidebar-label {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.sidebar-divider {
+  position: fixed;
+  top: 18px;
+  left: calc(22px + 40px + 140px);
+  width: 1px;
+  height: 0;
+  background: rgba(107, 107, 107, 0.14);
+  opacity: 0;
+  transition: height var(--sb-divider-dur) var(--sb-ease),
+    opacity var(--sb-divider-dur) var(--sb-ease);
+  z-index: 1100;
+  border-left: 1px solid rgba(107, 107, 107, 0.12);
+}
+
+.sidebar-icon {
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-divider.visible {
+  height: calc(100vh - 36px);
+  opacity: 1;
+}
+
+@media (max-width: 880px) {
+  .sidebar-toggle.open {
+    transform: translateX(80px);
+  }
+  .sidebar-divider {
+    left: calc(18px + 40px + 80px);
+  }
+}
