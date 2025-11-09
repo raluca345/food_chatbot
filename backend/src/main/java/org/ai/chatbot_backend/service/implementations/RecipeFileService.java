@@ -1,7 +1,8 @@
-package org.ai.chatbot_backend.service;
+package org.ai.chatbot_backend.service.implementations;
 
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.exception.ResourceNotFound;
+import org.ai.chatbot_backend.service.interfaces.IRecipeFileService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -15,17 +16,18 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
-public class RecipeFileService {
+public class RecipeFileService implements IRecipeFileService {
     private final Map<Long, String> storage = new ConcurrentHashMap<>();
     private final AtomicLong counter = new AtomicLong(0);
 
-
+    @Override
     public synchronized Long storeRecipeText(String recipeText) {
         long id = counter.incrementAndGet();
         storage.put(id, recipeText);
         return id;
     }
 
+    @Override
     public Resource getRecipeFile(Long id) {
         String recipeText = storage.get(id);
         if (recipeText == null) {
@@ -43,6 +45,7 @@ public class RecipeFileService {
         }
     }
 
+    @Override
     public String getDownloadMarkdown(Long id, String backendBaseUrl) {
         String url = backendBaseUrl.replaceAll("/+$", "") + "/api/v1/recipes/download/" + id;
         return "[Download recipe](" + url + ")";

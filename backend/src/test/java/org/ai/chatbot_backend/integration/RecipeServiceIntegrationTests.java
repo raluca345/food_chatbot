@@ -1,7 +1,7 @@
 package org.ai.chatbot_backend.integration;
 
 import lombok.extern.slf4j.Slf4j;
-import org.ai.chatbot_backend.service.RecipeService;
+import org.ai.chatbot_backend.service.implementations.RecipeService;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;

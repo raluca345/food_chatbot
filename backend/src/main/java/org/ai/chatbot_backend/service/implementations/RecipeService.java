@@ -1,8 +1,9 @@
-package org.ai.chatbot_backend.service;
+package org.ai.chatbot_backend.service.implementations;
 
 import com.azure.core.exception.HttpResponseException;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
+import org.ai.chatbot_backend.service.interfaces.IRecipeService;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -13,7 +14,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class RecipeService {
+public class RecipeService implements IRecipeService {
     private final ChatModel chatModel;
     private final RecipeFileService recipeFileService;
 
@@ -38,6 +39,7 @@ public class RecipeService {
         return promptTemplate.create(params);
     }
 
+    @Override
     public String createRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
         Prompt prompt = getSystemPrompt(ingredients, cuisine, dietaryRestrictions);
 

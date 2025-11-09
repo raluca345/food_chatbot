@@ -2,7 +2,7 @@ package org.ai.chatbot_backend.integration;
 
 import com.azure.core.exception.HttpResponseException;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
-import org.ai.chatbot_backend.service.ImageService;
+import org.ai.chatbot_backend.service.implementations.ImageService;
 import org.springframework.ai.image.ImageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

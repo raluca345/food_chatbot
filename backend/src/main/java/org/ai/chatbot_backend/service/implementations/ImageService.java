@@ -1,7 +1,8 @@
-package org.ai.chatbot_backend.service;
+package org.ai.chatbot_backend.service.implementations;
 
 import com.azure.core.exception.HttpResponseException;
 import lombok.RequiredArgsConstructor;
+import org.ai.chatbot_backend.service.interfaces.IImageService;
 import org.springframework.ai.azure.openai.AzureOpenAiImageModel;
 import org.springframework.ai.azure.openai.AzureOpenAiImageOptions;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -16,10 +17,10 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class ImageService {
+public class ImageService implements IImageService {
     private final AzureOpenAiImageModel azureOpenAiImageModel;
 
-
+    @Override
     public ImageResponse generateDishImageFromParams(String name, String course, String ingredients, String dishType,
                                                      String style, String size) {
 
@@ -41,8 +42,10 @@ public class ImageService {
         if (dishType != null && !dishType.isBlank()) {
             templateBuilder.append(" The type of dish is ").append("{dishType}").append(".");
         }
+
         String template = templateBuilder.toString();
         PromptTemplate promptTemplate = new PromptTemplate(template);
+
         Map<String, Object> params = Map.of(
                 "name", name,
                 "course", course != null ? course : "",
@@ -50,6 +53,7 @@ public class ImageService {
                 "dishType", dishType != null ? dishType : ""
         );
         Prompt prompt = promptTemplate.create(params);
+
         int width, height;
         try {
             String[] parts = size.toLowerCase().split("x");
@@ -58,6 +62,7 @@ public class ImageService {
         } catch (Exception e) {
             throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
         }
+
         try {
             ImageResponse response = azureOpenAiImageModel.call(
                     new ImagePrompt(String.valueOf(prompt),

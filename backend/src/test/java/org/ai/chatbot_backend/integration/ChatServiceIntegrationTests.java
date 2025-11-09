@@ -1,6 +1,6 @@
 package org.ai.chatbot_backend.integration;
 
-import org.ai.chatbot_backend.service.ChatService;
+import org.ai.chatbot_backend.service.implementations.ChatService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -3,10 +3,10 @@ package org.ai.chatbot_backend.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
-import org.ai.chatbot_backend.service.ChatService;
-import org.ai.chatbot_backend.service.ImageService;
-import org.ai.chatbot_backend.service.RecipeFileService;
-import org.ai.chatbot_backend.service.RecipeService;
+import org.ai.chatbot_backend.service.implementations.ChatService;
+import org.ai.chatbot_backend.service.implementations.ImageService;
+import org.ai.chatbot_backend.service.implementations.RecipeFileService;
+import org.ai.chatbot_backend.service.implementations.RecipeService;
 import org.springframework.ai.image.ImageResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -86,5 +86,10 @@ public class GenAIController {
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @GetMapping("my-images")
+    public ResponseEntity<String> gatGallery() {
+        return ResponseEntity.ok("Gallery placeholder");
     }
 }
