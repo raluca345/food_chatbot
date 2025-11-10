@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Spinner from "../commons/Spinner";
 import "./FoodChat.css";
 import ReactMarkdown from "react-markdown";
@@ -6,6 +6,7 @@ import {
   rehypePlugins,
   markdownComponents,
 } from "../../utils/sanitizeMarkdown";
+import { getNameFromToken } from "../../utils/jwt";
 
 function FoodChat() {
   const [prompt, setPrompt] = useState("");
@@ -16,10 +17,14 @@ function FoodChat() {
   const [loading, setLoading] = useState(false);
   const outputRef = useRef(null);
 
-  // auto-scroll to bottom when messages change
+  const userName = useMemo(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    return getNameFromToken(token);
+  }, []);
+
   useEffect(() => {
     if (outputRef.current) {
-      // scroll to bottom smoothly
       outputRef.current.scrollTo({
         top: outputRef.current.scrollHeight,
         behavior: "smooth",
@@ -30,7 +35,6 @@ function FoodChat() {
   const askFoodAi = async () => {
     if (!prompt.trim()) return;
 
-    // append user's message to history
     const userId = Date.now();
     const userMsg = { id: userId, role: "user", content: prompt };
     setMessages((m) => [...m, userMsg]);
@@ -73,7 +77,6 @@ function FoodChat() {
     setPrompt("");
   };
 
-  // clear highlight after a short delay
   useEffect(() => {
     if (!lastMessageId) return;
     const t = setTimeout(() => setLastMessageId(null), 1200);
@@ -82,7 +85,7 @@ function FoodChat() {
 
   return (
     <div>
-      <h2>Hello, User</h2>
+      <h2>Hello, {userName || "User"}</h2>
       <p>Ask me anything about food!</p>
       <div className="chat-controls">
         <textarea

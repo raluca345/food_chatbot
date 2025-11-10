@@ -2,13 +2,15 @@ package org.ai.chatbot_backend.auth;
 
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.config.JwtService;
-import org.ai.chatbot_backend.model.Role;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.service.implementations.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -20,29 +22,28 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
-        var user = User.builder()
-                .name(request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER)
-                .build();
-        var userDto = userService.mapToUserDto(user);
-        userService.saveUser(userDto);
-        var token = jwtService.generateToken(user);
+        User saved = userService.createUser(request.getUsername(), request.getEmail(), request.getPassword());
+        Map<String,Object> claims = new HashMap<>();
+        claims.put("name", saved.getName());
+        var token = jwtService.generateToken(claims, saved);
         return AuthResponse.builder()
                 .token(token)
                 .build();
     }
 
     public AuthResponse login(AuthRequest request) {
+        String email = request.getEmail() == null ? null : request.getEmail().trim().toLowerCase();
+        String password = request.getPassword();
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
+                        email,
+                        password
                 )
         );
-        var user = userService.findUserByEmail(request.getEmail());
-        var token = jwtService.generateToken(user);
+        var user = userService.findUserByEmail(email);
+        Map<String,Object> claims = new HashMap<>();
+        claims.put("name", user.getName());
+        var token = jwtService.generateToken(claims, user);
         return AuthResponse.builder()
                 .token(token)
                 .build();

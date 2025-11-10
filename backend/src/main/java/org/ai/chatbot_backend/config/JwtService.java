@@ -3,13 +3,13 @@ package org.ai.chatbot_backend.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,8 +35,27 @@ public class JwtService {
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Base64.getDecoder().decode(SECRET_KEY);
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        } catch (IllegalArgumentException e) {
+            keyBytes = decodeHexSafely(SECRET_KEY);
+        }
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private static byte[] decodeHexSafely(String hex) {
+        int len = hex.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            int hi = Character.digit(hex.charAt(i), 16);
+            int lo = Character.digit(hex.charAt(i + 1), 16);
+            if (hi == -1 || lo == -1) {
+                return hex.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            }
+            data[i / 2] = (byte) ((hi << 4) + lo);
+        }
+        return data;
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

@@ -99,6 +99,17 @@
   color: var(--accent-2);
 }
 
+.error-message {
+  color: #b00020;
+  background-color: #ffe6e6;
+  border: 1px solid #b00020;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 15px;
+  font-weight: 500;
+  text-align: center;
+}
+
 @media (max-width: 720px) {
   .user-form {
     margin: 28px 16px;
