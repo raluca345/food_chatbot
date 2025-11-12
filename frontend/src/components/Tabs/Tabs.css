@@ -1,0 +1,25 @@
+.tab-nav,
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 20px;
+}
+
+.tab-nav button {
+  border-radius: 8px;
+  padding: 10px 22px;
+  background: var(--brown-light);
+  color: var(--brown-contrast);
+  font-weight: 700;
+}
+
+.tab-nav button:hover {
+  background: var(--accent-3);
+  color: white;
+}
+
+.tab-nav button.active {
+  background: var(--accent);
+  color: white;
+}

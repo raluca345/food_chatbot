@@ -60,20 +60,26 @@
 }
 
 .sidebar-group .sidebar-label {
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 15px;
+  font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0;
   transform: translateX(8px);
   transition: opacity var(--sb-dur) var(--sb-ease),
     transform var(--sb-dur) var(--sb-ease);
   pointer-events: none;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #333;
+  cursor: default;
 }
 
 .sidebar.open .sidebar-group .sidebar-label {
   opacity: 1;
   transform: translateX(0);
   pointer-events: auto;
+  cursor: pointer;
 }
 
 .sidebar-divider {

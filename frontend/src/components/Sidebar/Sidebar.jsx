@@ -8,10 +8,16 @@ export default function Sidebar({ isOpen, onToggle }) {
   const handleExpand = () => {};
   const navigate = useNavigate();
 
-  const renderLabel = (text) => (
-    <span className="sidebar-label" aria-hidden={!isOpen}>
+  const renderLabel = (text, onClick) => (
+    <button
+      type="button"
+      className="sidebar-label"
+      aria-hidden={!isOpen}
+      onClick={onClick}
+      tabIndex={isOpen ? 0 : -1}
+    >
       {text}
-    </span>
+    </button>
   );
 
   return (
@@ -29,7 +35,7 @@ export default function Sidebar({ isOpen, onToggle }) {
             title="Images"
             onClick={() => navigate("/home/gallery")}
           />
-          {renderLabel("Images")}
+          {renderLabel("Images", () => navigate("/home/gallery"))}
         </span>
         <span>
           <GiCook
@@ -37,7 +43,9 @@ export default function Sidebar({ isOpen, onToggle }) {
             title="Recipes history"
             onClick={() => navigate("/home/recipes-history")}
           />
-          {renderLabel("Recipes history")}
+          {renderLabel("Recipes history", () =>
+            navigate("/home/recipes-history")
+          )}
         </span>
       </div>
 

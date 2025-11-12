@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 export function decodeJwt(token) {
   try {
     if (!token || typeof token !== "string") return null;
@@ -9,7 +11,7 @@ export function decodeJwt(token) {
       base64.length + ((4 - (base64.length % 4)) % 4),
       "="
     );
-    const json = atob(padded);
+    const json = Buffer.from(padded, "base64").toString("utf-8");
     return JSON.parse(json);
   } catch (e) {
     console.warn("decodeJwt failed:", e);

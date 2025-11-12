@@ -14,10 +14,11 @@ import SignUpPage from "./components/auth/SignUpPage";
 import LoginPage from "./components/auth/LoginPage";
 import { FaUtensils } from "react-icons/fa";
 import { GiCookingPot } from "react-icons/gi";
-import { FaUser } from "react-icons/fa";
+import UserDropdown from "./components/UserMenu/UserDropdown";
 import NotFound from "./components/NotFound";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { getEmailFromToken } from "./utils/jwt";
+import Tabs from "./components/Tabs/Tabs";
 
 function App() {
   const navigate = useNavigate();
@@ -42,26 +43,14 @@ function App() {
   };
 
   const [isSideBarOpen, setIsSideBarOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
 
   const toggleSidebar = () => setIsSideBarOpen((s) => !s);
 
-  const toggleDropdown = () => setShowDropdown((prev) => !prev);
-
   const handleLogout = () => {
     localStorage.removeItem("token");
-    setShowDropdown(false);
     navigate("/home");
     window.location.reload();
   };
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest(".user-menu")) setShowDropdown(false);
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
 
   const activeTab = getActiveTab();
   const isSignUpPage = location.pathname === "/sign-up";
@@ -77,26 +66,7 @@ function App() {
         <section>
           {!isSignUpPage && !isLoginPage && (
             <header className="app-header">
-              <nav className="tab-nav">
-                <button
-                  className={activeTab === "image-generator" ? "active" : ""}
-                  onClick={() => navigate("/home/image-generator")}
-                >
-                  Generate Food Image
-                </button>
-                <button
-                  className={activeTab === "food-chat" ? "active" : ""}
-                  onClick={() => navigate("/home/chat")}
-                >
-                  Talk About Food
-                </button>
-                <button
-                  className={activeTab === "recipe-generator" ? "active" : ""}
-                  onClick={() => navigate("/home/recipe-generator")}
-                >
-                  Generate a Recipe
-                </button>
-              </nav>
+              <Tabs />
 
               {!isLoggedIn && (
                 <div className="auth-links">
@@ -109,21 +79,7 @@ function App() {
                 </div>
               )}
               {isLoggedIn && (
-                <div className="user-menu">
-                  <FaUser
-                    className="icon-inline user-icon"
-                    onClick={toggleDropdown}
-                    size={24}
-                  />
-                  {showDropdown && (
-                    <div className="dropdown-menu">
-                      <div className="dropdown-header">
-                        {userEmail ? `Logged in as ${userEmail}` : "Logged in"}
-                      </div>
-                      <button onClick={handleLogout}>Log Out</button>
-                    </div>
-                  )}
-                </div>
+                <UserDropdown token={token} onLogout={handleLogout} />
               )}
             </header>
           )}

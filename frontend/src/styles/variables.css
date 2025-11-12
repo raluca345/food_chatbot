@@ -1,0 +1,20 @@
+/* Centralized CSS variables shared across the app */
+:root {
+  --bg: #fffdfa;
+  --surface: #faf7f5;
+  --accent: #743f10;
+  --accent-2: #f08a5d;
+  --accent-3: #a56b3c;
+  --brown-light: #f3e9df;
+  --brown-contrast: #6b472b;
+  --danger: #e74c3c;
+  --muted: #6b6b6b;
+  --card-radius: 12px;
+
+  /* Sidebar animation tokens (used by Sidebar.css) */
+  --sb-ease: cubic-bezier(0.22, 0.85, 0.28, 1);
+  --sb-dur: 480ms;
+  --sb-char-in-dur: 520ms;
+  --sb-char-out-dur: 320ms;
+  --sb-divider-dur: 520ms;
+}
