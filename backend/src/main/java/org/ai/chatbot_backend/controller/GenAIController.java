@@ -2,7 +2,7 @@ package org.ai.chatbot_backend.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.ai.chatbot_backend.dto.SaveRecipeHistoryRequest;
+import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.*;
 import org.springframework.ai.image.ImageResponse;
@@ -59,7 +59,7 @@ public class GenAIController {
                 }
                 String contentWithoutLink = String.join("\n", lines);
 
-                SaveRecipeHistoryRequest recipeHistoryRequest = new SaveRecipeHistoryRequest();
+                SaveRecipeInHistoryRequest recipeHistoryRequest = new SaveRecipeInHistoryRequest();
                 recipeHistoryRequest.setTitle(title);
                 recipeHistoryRequest.setContent(contentWithoutLink);
 
