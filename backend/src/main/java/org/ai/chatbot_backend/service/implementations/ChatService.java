@@ -28,7 +28,7 @@ public class ChatService implements IChatService {
 
     @Override
     public boolean looksLikeRecipe(String text) {
-        return text.toLowerCase().contains("ingredients");
+        return text.toLowerCase().contains("ingredients") && text.toLowerCase().contains("instructions");
     }
 
     @Override

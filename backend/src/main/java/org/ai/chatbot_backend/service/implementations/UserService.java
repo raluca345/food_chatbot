@@ -3,6 +3,7 @@ package org.ai.chatbot_backend.service.implementations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.UserDto;
+import org.ai.chatbot_backend.exception.ResourceNotFound;
 import org.ai.chatbot_backend.model.Role;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.UserRepository;
@@ -12,7 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.lang.module.ResolutionException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,7 +37,12 @@ public class UserService implements IUserService {
 
     @Override
     public User findUserByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow(() -> new ResolutionException("User not found"));
+        return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFound("User not found"));
+    }
+
+    @Override
+    public long findUserIdByEmail(String name) {
+        return userRepository.findIdByEmail(name).orElseThrow(() -> new ResourceNotFound("User id not found"));
     }
 
     @Override

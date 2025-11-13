@@ -2,18 +2,20 @@ package org.ai.chatbot_backend.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ai.chatbot_backend.dto.SaveRecipeHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
-import org.ai.chatbot_backend.service.implementations.ChatService;
-import org.ai.chatbot_backend.service.implementations.ImageService;
-import org.ai.chatbot_backend.service.implementations.RecipeFileService;
-import org.ai.chatbot_backend.service.implementations.RecipeService;
+import org.ai.chatbot_backend.service.implementations.*;
 import org.springframework.ai.image.ImageResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -25,6 +27,8 @@ public class GenAIController {
     private final ImageService imageService;
     private final RecipeService recipeService;
     private final RecipeFileService recipeFileService;
+    private final UserService userService;
+    private final RecipeHistoryService recipeHistoryService;
 
     @PostMapping("messages")
     public ResponseEntity<String> getResponse(@RequestParam String prompt) {
@@ -37,12 +41,37 @@ public class GenAIController {
 
     @PostMapping("recipes")
     public ResponseEntity<String> generateRecipe(@RequestParam String ingredients,
-                                 @RequestParam(defaultValue = "any") String cuisine,
-                                 @RequestParam(defaultValue = "") String dietaryRestrictions) {
+                                                 @RequestParam(defaultValue = "any") String cuisine,
+                                                 @RequestParam(defaultValue = "") String dietaryRestrictions,
+                                                 Authentication authentication) {
         try {
-            return ResponseEntity.ok(recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions));
+            String recipe = recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
+
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                long userId = userService.findUserIdByEmail(email);
+
+                String title = recipeService.extractRecipeTitle(recipe);
+
+                List<String> lines = Arrays.stream(recipe.split("\\R")).toList();
+                if (lines.size() > 2) {
+                    lines = lines.subList(0, lines.size() - 2);
+                }
+                String contentWithoutLink = String.join("\n", lines);
+
+                SaveRecipeHistoryRequest recipeHistoryRequest = new SaveRecipeHistoryRequest();
+                recipeHistoryRequest.setTitle(title);
+                recipeHistoryRequest.setContent(contentWithoutLink);
+
+                recipeHistoryService.save(userId, recipeHistoryRequest);
+            }
+
+            return ResponseEntity.ok(recipe);
+
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Something went wrong, please try again.");
         }
     }
 
