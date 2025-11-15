@@ -1,0 +1,71 @@
+.cm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.cm-modal {
+  background: var(--surface-light);
+  color: var(--brown-contrast);
+  border-radius: 10px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  padding: 18px;
+}
+
+.cm-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.cm-message {
+  margin: 0 0 16px 0;
+  color: #555;
+}
+
+.cm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cm-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.cm-btn-secondary {
+  background: transparent;
+  color: var(--brown-contrast);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.cm-btn-secondary:hover,
+.cm-btn-secondary:focus {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.cm-btn-danger {
+  background: var(--surface-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+.cm-btn-danger:hover,
+.cm-btn-danger:focus {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.cm-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

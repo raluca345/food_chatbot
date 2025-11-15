@@ -1,0 +1,62 @@
+.pc-pagination {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+}
+
+.pc-page-info {
+  color: var(--brown-contrast);
+  font-size: 13px;
+}
+
+.pc-btn {
+  padding: 6px 10px;
+}
+
+.pc-page-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(116, 63, 16, 0.18);
+}
+
+.pc-page-btn:not(.active):hover,
+.pc-page-btn:not(.active):focus {
+  background: var(--brown-contrast);
+  color: white;
+  border-color: var(--brown-contrast);
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.pc-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pc-pages {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pc-page-btn {
+  min-width: 34px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: var(--brown-contrast);
+  cursor: pointer;
+}
+
+.pc-page-btn.active {
+  background: var(--brown-contrast);
+  color: white;
+  border-color: var(--brown-contrast);
+}
+
+.pc-ellipsis {
+  color: var(--brown-contrast);
+  opacity: 0.7;
+  padding: 0 6px;
+}

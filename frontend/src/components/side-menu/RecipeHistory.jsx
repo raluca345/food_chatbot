@@ -14,6 +14,8 @@ import {
   downloadRecipeFromHistory,
 } from "../../api/homeApi";
 import Spinner from "../commons/Spinner";
+import ConfirmModal from "../commons/ConfirmModal";
+import PaginationControls from "../commons/PaginationControls";
 
 export default function RecipeHistory() {
   const [historyEntries, setHistoryEntries] = useState([]);
@@ -58,7 +60,6 @@ export default function RecipeHistory() {
   };
 
   const handleDelete = async (entryId, index) => {
-    // optimistic UI: remove locally, then call API. restore on failure.
     const prev = historyEntries;
     const next = prev.filter((e) => e.id !== entryId);
     setHistoryEntries(next);
@@ -70,12 +71,10 @@ export default function RecipeHistory() {
         n.delete(entryId);
         return n;
       });
-      // if the current page becomes empty after deletion and there is a previous page, go back one
       if (next.length === 0 && page > 1) {
         setPage((p) => p - 1);
       }
     } catch (err) {
-      // restore
       setHistoryEntries(prev);
       setDeletingIds((s) => {
         const n = new Set(s);
@@ -157,7 +156,7 @@ export default function RecipeHistory() {
 
   return (
     <>
-      <ul>
+      <ul className="history-list">
         {loading && (
           <li>
             <Spinner />
@@ -227,56 +226,34 @@ export default function RecipeHistory() {
           </li>
         ))}
       </ul>
-      <div className="rh-pagination">
-        <button
-          className="btn btn-secondary"
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1 || loading}
-        >
-          Previous
-        </button>
-        <div className="rh-page-info">
-          Page {page}
-          {typeof total === "number"
-            ? ` of ${Math.max(1, Math.ceil(total / PAGE_SIZE))}`
-            : ""}
-        </div>
-        <button
-          className="btn btn-secondary"
-          onClick={() => setPage((p) => p + 1)}
-          disabled={
-            loading ||
-            (typeof total === "number"
-              ? page >= Math.max(1, Math.ceil(total / PAGE_SIZE))
-              : historyEntries.length < PAGE_SIZE)
-          }
-        >
-          Next
-        </button>
-      </div>
-      {confirmDelete && (
-        <div className="rh-modal-overlay" role="dialog" aria-modal="true">
-          <div className="rh-modal">
-            <h3>Confirm delete</h3>
-            <p>
-              Are you sure you want to delete "{confirmDelete.title}"? This
-              action cannot be undone.
-            </p>
-            <div className="rh-modal-actions">
-              <button className="btn btn-secondary" onClick={closeDeleteModal}>
-                Cancel
-              </button>
-              <button
-                className="btn btn-danger"
-                onClick={confirmAndDelete}
-                disabled={deletingIds.has(confirmDelete.id)}
-              >
-                {deletingIds.has(confirmDelete.id) ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PaginationControls
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        onPageChange={(p) => setPage(p)}
+        disabled={loading}
+      />
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Confirm delete"
+        message={
+          confirmDelete
+            ? `Are you sure you want to delete "${confirmDelete.title}"? This action cannot be undone.`
+            : ""
+        }
+        confirmLabel={
+          confirmDelete && deletingIds.has(confirmDelete.id)
+            ? "Deleting..."
+            : "Delete"
+        }
+        cancelLabel="Cancel"
+        onConfirm={confirmAndDelete}
+        onCancel={closeDeleteModal}
+        confirmDisabled={
+          confirmDelete ? deletingIds.has(confirmDelete.id) : false
+        }
+        variant="danger"
+      />
     </>
   );
 }
