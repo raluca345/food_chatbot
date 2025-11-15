@@ -5,7 +5,6 @@ import "./Sidebar.css";
 import { useNavigate } from "react-router";
 
 export default function Sidebar({ isOpen, onToggle }) {
-  const handleExpand = () => {};
   const navigate = useNavigate();
 
   const renderLabel = (text, onClick) => (
@@ -32,20 +31,18 @@ export default function Sidebar({ isOpen, onToggle }) {
         <span>
           <FaImages
             className="icon-inline sidebar-icon"
-            title="Images"
+            title="Gallery"
             onClick={() => navigate("/home/gallery")}
           />
-          {renderLabel("Images", () => navigate("/home/gallery"))}
+          {renderLabel("Gallery", () => navigate("/me/gallery"))}
         </span>
         <span>
           <GiCook
             className="icon-inline sidebar-icon"
-            title="Recipes history"
-            onClick={() => navigate("/home/recipes-history")}
+            title="Recipe history"
+            onClick={() => navigate("/me/recipe-history")}
           />
-          {renderLabel("Recipes history", () =>
-            navigate("/home/recipes-history")
-          )}
+          {renderLabel("Recipe history", () => navigate("/me/recipe-history"))}
         </span>
       </div>
 

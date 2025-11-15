@@ -1,24 +1,14 @@
 import React, { useState, useEffect } from "react";
-import {
-  Routes,
-  Route,
-  useNavigate,
-  useLocation,
-  Link,
-} from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import "./App.css";
-import FoodImageGenerator from "./components/home/FoodImageGenerator";
-import FoodChat from "./components/home/FoodChat";
-import RecipeGenerator from "./components/home/RecipeGenerator";
-import SignUpPage from "./components/auth/SignUpPage";
-import LoginPage from "./components/auth/LoginPage";
 import { FaUtensils } from "react-icons/fa";
 import { GiCookingPot } from "react-icons/gi";
 import UserDropdown from "./components/UserMenu/UserDropdown";
-import NotFound from "./components/NotFound";
-import Sidebar from "./components/Sidebar/Sidebar";
+import Sidebar from "./components/side-menu/Sidebar";
 import { getEmailFromToken } from "./utils/jwt";
 import Tabs from "./components/Tabs/Tabs";
+import AppRoutes from "./routes/AppRoutes";
+import { getToken } from "./api/homeApi";
 
 function App() {
   const navigate = useNavigate();
@@ -39,7 +29,7 @@ function App() {
     if (location.pathname === "/home/recipe-generator")
       return "recipe-generator";
 
-    return "food-chat";
+    return null;
   };
 
   const [isSideBarOpen, setIsSideBarOpen] = useState(false);
@@ -55,7 +45,7 @@ function App() {
   const activeTab = getActiveTab();
   const isSignUpPage = location.pathname === "/sign-up";
   const isLoginPage = location.pathname === "/login";
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const isLoggedIn = Boolean(token);
   const userEmail = token ? getEmailFromToken(token) : null;
 
@@ -85,22 +75,7 @@ function App() {
           )}
 
           <div className="food-tabs">
-            <Routes>
-              <Route path="/" element={<FoodChat />} />
-              <Route path="/home" element={<FoodChat />} />
-              <Route
-                path="/home/image-generator"
-                element={<FoodImageGenerator />}
-              />
-              <Route path="/home/chat" element={<FoodChat />} />
-              <Route
-                path="/home/recipe-generator"
-                element={<RecipeGenerator />}
-              />
-              <Route path="/sign-up" element={<SignUpPage />}></Route>
-              <Route path="/login" element={<LoginPage />}></Route>
-              <Route path="*" element={<NotFound />}></Route>
-            </Routes>
+            <AppRoutes />
           </div>
         </section>
       </article>

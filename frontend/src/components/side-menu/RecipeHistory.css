@@ -1,0 +1,218 @@
+.arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: var(--brown-contrast);
+  transition: transform 220ms ease;
+}
+
+.actions {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.actions .action-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.actions .action-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.actions .inline-icon {
+  font-size: 20px;
+}
+
+.actions .delete:hover {
+  color: var(--danger);
+}
+
+.actions .download:hover {
+  color: var(--download-blue);
+}
+
+button.accordion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--brown-light);
+  color: var(--brown-contrast);
+  cursor: pointer;
+  padding: 18px;
+  padding-right: 72px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+  transition: 0.5s;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  position: relative;
+}
+
+button.accordion[aria-expanded="true"] {
+  border-radius: var(--card-radius) var(--card-radius) 0 0;
+}
+
+.arrow.expanded {
+  transform: rotate(180deg);
+}
+
+button.accordion:hover {
+  background-color: var(--brown-medium);
+}
+
+.panel {
+  padding: 0 18px;
+  background-color: var(--surface-light);
+  border-radius: 0 0 var(--card-radius) var(--card-radius);
+  text-align: left;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 320ms ease, padding 260ms ease;
+  margin-top: -1px;
+}
+
+.panel.open {
+  padding: 12px 18px;
+}
+
+.history-entry {
+  list-style: none;
+  margin-bottom: 12px;
+}
+
+.history-empty {
+  color: #8a8a8a;
+  padding: 12px 18px;
+  background: transparent;
+}
+
+.rh-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.rh-modal {
+  background: var(--surface-light);
+  color: var(--brown-contrast);
+  border-radius: 10px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  padding: 18px;
+}
+
+.rh-modal h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.rh-modal p {
+  margin: 0 0 16px 0;
+  color: #555;
+}
+
+.rh-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--brown-contrast);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.btn-danger {
+  background: var(--surface-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+.btn-danger:hover,
+.btn-danger:focus {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+  color: #fff;
+  background-color: var(--brown-contrast);
+}
+
+.inline-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-top: 2px solid var(--brown-contrast);
+  border-radius: 50%;
+  animation: rh-spin 0.8s linear infinite;
+}
+
+@keyframes rh-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.rh-pagination {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px 4px 8px;
+}
+
+.rh-page-info {
+  color: var(--brown-contrast);
+  font-size: 13px;
+}
+
+.rh-pagination .btn-secondary {
+  padding: 6px 10px;
+}
+
+.rh-pagination .btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

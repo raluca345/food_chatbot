@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import Spinner from "../commons/Spinner";
 import "./FoodImageGenerator.css";
 
+import { generateImage } from "../../api/homeApi";
+
 function FoodImageGenerator() {
   const [params, setParams] = useState({
     name: "",
@@ -26,15 +28,7 @@ function FoodImageGenerator() {
     setError("");
     setLoading(true);
     try {
-      const query = new URLSearchParams(params);
-      const response = await fetch(
-        `http://localhost:8080/api/v1/food-images?${query.toString()}`,
-        { method: "POST" }
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const url = await response.text();
+      const url = await generateImage(params);
       setImageUrls([url]);
     } catch (err) {
       console.error("Error generating image: ", err);

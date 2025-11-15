@@ -7,6 +7,8 @@ import {
 } from "../../utils/sanitizeMarkdown";
 import "./RecipeGenerator.css";
 
+import { generateRecipe } from "../../api/homeApi";
+
 function RecipeGenerator() {
   const [params, setParams] = useState({
     ingredients: "",
@@ -24,15 +26,15 @@ function RecipeGenerator() {
   const handleGenerateRecipe = async () => {
     setLoading(true);
     const query = new URLSearchParams(params);
-
-    const response = await fetch(
-      `http://localhost:8080/api/v1/recipes?${query.toString()}`,
-      { method: "POST" }
-    );
-
-    const recipeTxt = await response.text();
-    setRecipe(recipeTxt);
-    setLoading(false);
+    try {
+      const recipeTxt = await generateRecipe(params);
+      setRecipe(recipeTxt);
+    } catch (err) {
+      console.error("Error generating recipe:", err);
+      setRecipe("Error generating recipe");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -6,6 +6,7 @@ import {
   rehypePlugins,
   markdownComponents,
 } from "../../utils/sanitizeMarkdown";
+import { generateMessage } from "../../api/homeApi";
 import { getNameFromToken } from "../../utils/jwt";
 
 function FoodChat() {
@@ -40,19 +41,8 @@ function FoodChat() {
     setMessages((m) => [...m, userMsg]);
     setLoading(true);
 
-    const response = await fetch(
-      "http://localhost:8080/api/v1/messages?prompt=" +
-        encodeURIComponent(prompt),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.ok) {
-      const data = await response.text();
+    try {
+      const data = await generateMessage(prompt);
       const assistantId = Date.now() + 1;
       const assistantMsg = {
         id: assistantId,
@@ -62,13 +52,13 @@ function FoodChat() {
       setMessages((m) => [...m, assistantMsg]);
       setLastMessageId(assistantId);
       setChatResponse(data);
-    } else {
-      const err = "Error: Unable to fetch response";
-      setChatResponse(err);
+    } catch (err) {
+      const errTxt = err?.message || "Error: Unable to fetch response";
+      setChatResponse(errTxt);
       const assistantId = Date.now() + 1;
       setMessages((m) => [
         ...m,
-        { id: assistantId, role: "assistant", content: err },
+        { id: assistantId, role: "assistant", content: errTxt },
       ]);
       setLastMessageId(assistantId);
     }
@@ -137,7 +127,6 @@ function FoodChat() {
                   <div className="reply-btn-wrap">
                     <button
                       onClick={() => {
-                        // prepend each line with '> ' to create a Markdown quote
                         const quoted = msg.content
                           .replace(/\r/g, "")
                           .split("\n")

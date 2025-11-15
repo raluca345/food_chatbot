@@ -21,7 +21,7 @@ export default function Tabs() {
     if (location.pathname === "/home/recipe-generator")
       return "recipe-generator";
 
-    return "food-chat";
+    return null;
   };
 
   const activeTab = getActiveTab();
