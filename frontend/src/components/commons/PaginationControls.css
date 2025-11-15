@@ -15,30 +15,6 @@
   padding: 6px 10px;
 }
 
-.pc-page-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(116, 63, 16, 0.18);
-}
-
-.pc-page-btn:not(.active):hover,
-.pc-page-btn:not(.active):focus {
-  background: var(--brown-contrast);
-  color: white;
-  border-color: var(--brown-contrast);
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
-}
-
-.pc-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.pc-pages {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
 .pc-page-btn {
   min-width: 34px;
   padding: 6px 8px;
@@ -53,6 +29,30 @@
   background: var(--brown-contrast);
   color: white;
   border-color: var(--brown-contrast);
+}
+
+.pc-page-btn:not(.active):hover,
+.pc-page-btn:not(.active):focus {
+  background: var(--brown-contrast);
+  color: white;
+  border-color: var(--brown-contrast);
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.pc-page-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(116, 63, 16, 0.18);
+}
+
+.pc-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pc-pages {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .pc-ellipsis {

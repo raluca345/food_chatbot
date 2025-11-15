@@ -1,0 +1,43 @@
+.header {
+  font-size: clamp(5rem, 3.5vw, 2.5rem);
+  font-weight: bold;
+  color: var(--brown-contrast);
+  margin: 0;
+}
+
+.nf-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.nf-items p {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.return-link {
+  text-decoration: none;
+  color: var(--accent-3);
+  border-radius: 4px;
+  padding: 0.15rem 0.25rem;
+}
+
+.return-link:visited {
+  color: var(--accent-2);
+}
+
+.return-link:hover,
+.return-link:active {
+  color: var(--accent);
+}
+
+.return-link:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
