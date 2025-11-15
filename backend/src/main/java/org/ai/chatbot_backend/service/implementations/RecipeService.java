@@ -2,8 +2,10 @@ package org.ai.chatbot_backend.service.implementations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.RecipeResponse;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
+import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.service.interfaces.IRecipeService;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -93,15 +95,27 @@ public class RecipeService implements IRecipeService {
             return false;
         }
 
-        return RECIPE_PATTERN.matcher(recipeText).find();
+        if (RECIPE_PATTERN.matcher(recipeText).find()) {
+            return true;
+        }
+
+        String lower = recipeText.toLowerCase();
+        boolean hasTitle = recipeText.trim().startsWith("###");
+        boolean hasIngredients = lower.contains("ingredients");
+        boolean hasInstructions = lower.contains("instructions");
+
+        return hasTitle && hasIngredients && hasInstructions;
     }
 
     @Override
-    public String createRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
+    public CreateRecipeResult createRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
         Prompt prompt = getSystemPrompt(ingredients, cuisine, dietaryRestrictions);
 
         try {
             String rawResponse = chatModel.call(prompt).getResult().getOutput().getText();
+            if (rawResponse == null || rawResponse.isBlank()) {
+                throw new ResourceNotFoundException("No recipe");
+            }
             String jsonResponse = extractJsonBlock(rawResponse);
 
             RecipeResponse recipeResponse = objectMapper.readValue(jsonResponse, RecipeResponse.class);
@@ -115,8 +129,10 @@ public class RecipeService implements IRecipeService {
             Long id = recipeFileService.storeRecipeText(recipeResponse.getRecipeMarkdown());
             String downloadUrl = recipeFileService.getDownloadMarkdown(id, backendBaseUrl);
 
-            return recipeResponse.getRecipeMarkdown() + "\n\n" + downloadUrl;
+            return new CreateRecipeResult(recipeResponse.getRecipeMarkdown(), id, downloadUrl);
 
+        } catch (InappropriateRequestRefusalException e) {
+            throw e;
         } catch (RuntimeException e) {
             throw new InappropriateRequestRefusalException("I'm sorry, but I can't assist with that request.");
         }

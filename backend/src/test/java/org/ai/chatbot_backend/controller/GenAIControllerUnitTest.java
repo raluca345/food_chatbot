@@ -1,5 +1,6 @@
 package org.ai.chatbot_backend.controller;
 
+import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.*;
@@ -49,7 +50,9 @@ class GenAIControllerUnitTest {
     void generateRecipe_validPrompt_savesHistory() {
         String recipeText = "**Recipe Title:** Yummy\n\nIngredients:\n- a\n- b\n\nDownload link here";
 
-        when(recipeService.createRecipe(anyString(), anyString(), anyString())).thenReturn(recipeText);
+        CreateRecipeResult createResult = new CreateRecipeResult(recipeText, 42L, "[Download recipe](http://localhost/api/v1/recipes/download/42)");
+
+        when(recipeService.createRecipe(anyString(), anyString(), anyString())).thenReturn(createResult);
         when(userService.findUserIdByEmail("user@example.com")).thenReturn(123L);
         when(recipeService.extractRecipeTitle(recipeText)).thenReturn("Yummy");
 
@@ -66,6 +69,7 @@ class GenAIControllerUnitTest {
         assertTrue(saved.getContent().contains("Ingredients"));
         assertFalse(saved.getContent().contains("Download link here"));
         assertFalse(saved.getContent().trim().endsWith("Download link here"));
+        assertEquals(42L, saved.getFileId());
     }
 
     @Test

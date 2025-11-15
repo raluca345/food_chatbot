@@ -9,4 +9,5 @@ public interface RecipeHistoryRepository extends JpaRepository<RecipeHistory, Lo
     List<RecipeHistory> findByUser_IdOrderByCreatedAtDesc(Long userId);
     void deleteByUser_IdAndId(Long userId, Long entryId);
     boolean existsByUser_IdAndId(Long userId, Long entryId);
+    boolean existsByRecipeFile_Id(Long fileId);
 }

@@ -1,6 +1,7 @@
 package org.ai.chatbot_backend.controller;
 
 import org.ai.chatbot_backend.config.JwtService;
+import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.*;
@@ -13,8 +14,8 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -51,7 +52,10 @@ class GenAIControllerWebMvcTest {
     void generateRecipe_validPrompt_savesHistory() throws Exception {
         String recipeText = "**Recipe Title:** Yummy\n\nIngredients:\n- a\n- b\n\nDownload link here";
 
-        when(recipeService.createRecipe(anyString(), anyString(), anyString())).thenReturn(recipeText);
+        CreateRecipeResult createResult = new CreateRecipeResult(
+                recipeText, 42L, "[Download recipe](http://localhost/api/v1/recipes/download/42)");
+
+        when(recipeService.createRecipe(anyString(), anyString(), anyString())).thenReturn(createResult);
         when(userService.findUserIdByEmail("user@example.com")).thenReturn(123L);
         when(recipeService.extractRecipeTitle(recipeText)).thenReturn("Yummy");
 
@@ -67,6 +71,7 @@ class GenAIControllerWebMvcTest {
         SaveRecipeInHistoryRequest saved = captor.getValue();
         assertFalse(saved.getContent().contains("Download link here"));
         assertFalse(saved.getContent().trim().endsWith("Download link here"));
+        assertEquals(42L, saved.getFileId());
     }
 
     @Test

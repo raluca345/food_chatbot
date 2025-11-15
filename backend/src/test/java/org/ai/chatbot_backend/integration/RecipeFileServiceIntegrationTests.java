@@ -2,15 +2,15 @@ package org.ai.chatbot_backend.integration;
 
 import com.azure.core.exception.HttpResponseException;
 import com.azure.core.http.HttpResponse;
+import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.ChatService;
 import org.ai.chatbot_backend.service.implementations.RecipeFileService;
 import org.ai.chatbot_backend.service.implementations.RecipeService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.ai.chat.messages.AssistantMessage;
+import org.ai.chatbot_backend.util.TestJsonUtils;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
@@ -21,6 +21,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,34 +48,33 @@ public class RecipeFileServiceIntegrationTests {
         @Autowired
         private RecipeService recipeService;
 
-        @ParameterizedTest
-        @CsvSource(value = {
-                """
-                        Classic Omelette
-                        
-                        Ingredients:
-                        - 2 eggs
-                        - salt
-                        - pepper
-                        
-                        Instructions:
-                        1. Beat eggs.
-                        2. Cook in pan.
-                        """
-        })
-        void whenValidRecipe_thenDownloadUrlAndFileAreValid(String recipe) throws Exception {
+        @Test
+        void whenValidRecipe_thenDownloadUrlAndFileAreValid() throws Exception {
+            String recipe = "Classic Omelette\n\nIngredients:\n- 2 eggs\n- salt\n- pepper\n\nInstructions:\n1. Beat eggs.\n2. Cook in pan.";
             ChatResponse response = mock(ChatResponse.class);
             Generation generation = mock(Generation.class);
-            AssistantMessage message = new AssistantMessage(recipe);
+            String recipeMarkdown = recipe;
+            recipeMarkdown = "### " + recipeMarkdown;
+            recipeMarkdown = recipeMarkdown.replace("\n\nIngredients:", "\n\n#### Ingredients:")
+                    .replace("\n\nInstructions:", "\n\n#### Instructions:");
+
+            Map<String, Object> payload = Map.of(
+                    "title", "Classic Omelette",
+                    "recipe_markdown", recipeMarkdown
+            );
+            String json = TestJsonUtils.toJson(payload);
+            AssistantMessage message = mock(AssistantMessage.class);
+            when(message.getText()).thenReturn(json);
 
             when(chatModel.call(any(Prompt.class))).thenReturn(response);
             when(response.getResult()).thenReturn(generation);
             when(generation.getOutput()).thenReturn(message);
 
-            String result = recipeService.createRecipe("egss", "French", "null");
-            assertThat(result).contains(recipe);
+            CreateRecipeResult result = recipeService.createRecipe("egss", "French", "null");
+            String fullText = result.toFullText();
+            assertThat(fullText).contains(recipeMarkdown);
 
-            Matcher m = Pattern.compile("\\[Download recipe]\\(([^)]+)\\)").matcher(result);
+            Matcher m = Pattern.compile("\\[Download recipe]\\(([^)]+)\\)").matcher(fullText);
             assertThat(m.find()).as("Download link is present").isTrue();
             String downloadUrl = m.group(1);
             assertThat(downloadUrl).startsWith("http://localhost:8080/api/v1/recipes/download/");
@@ -86,7 +86,7 @@ public class RecipeFileServiceIntegrationTests {
             assertThat(resource.isReadable()).isTrue();
 
             String fileText = new String(resource.getInputStream().readAllBytes());
-            assertThat(fileText).isEqualTo(recipe);
+            assertThat(fileText).isEqualTo(recipeMarkdown);
         }
 
         @Test
@@ -110,22 +110,9 @@ public class RecipeFileServiceIntegrationTests {
         @MockitoSpyBean
         private RecipeFileService recipeFileService;
 
-        @ParameterizedTest
-        @CsvSource(value = {
-                """
-                        Classic Omelette
-                        
-                        Ingredients:
-                        - 2 eggs
-                        - salt
-                        - pepper
-                        
-                        Instructions:
-                        1. Beat eggs.
-                        2. Cook in pan.
-                        """
-        })
-        void whenValidRecipe_thenDownloadUrlAndFileAreValid(String recipe) throws Exception {
+        @Test
+        void whenValidRecipe_thenDownloadUrlAndFileAreValid() throws Exception {
+            String recipe = "Classic Omelette\n\nIngredients:\n- 2 eggs\n- salt\n- pepper\n\nInstructions:\n1. Beat eggs.\n2. Cook in pan.";
 
             Long id = recipeFileService.storeRecipeText(recipe);
             String downloadMd = recipeFileService.getDownloadMarkdown(id, "http://localhost:8080");

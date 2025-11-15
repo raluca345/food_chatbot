@@ -1,5 +1,8 @@
 package org.ai.chatbot_backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,6 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @Data
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User implements UserDetails {
 
     @Serial
@@ -32,6 +36,7 @@ public class User implements UserDetails {
     private String email;
 
     @Column(nullable=false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -39,6 +44,7 @@ public class User implements UserDetails {
     private Role role;
 
     @Override
+    @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));
     }

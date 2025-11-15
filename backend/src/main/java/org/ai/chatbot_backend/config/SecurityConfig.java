@@ -31,7 +31,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/messages/**").permitAll()
                         .requestMatchers("/api/v1/recipes").permitAll()
+                        .requestMatchers("/api/v1/recipes/").permitAll()
+                        .requestMatchers("/api/v1/recipes/**").permitAll()
                         .requestMatchers("/api/v1/recipes/download/**").permitAll()
+
                         .requestMatchers("/api/v1/food-images/**").permitAll()
                         .requestMatchers("/api/v1/recipes/history").authenticated()
                         .anyRequest().permitAll()

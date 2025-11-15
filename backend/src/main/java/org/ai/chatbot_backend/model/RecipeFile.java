@@ -11,34 +11,25 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-@Table(name = "recipe_history")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RecipeHistory {
+public class RecipeFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
-    private User user;
-
-    @Column(nullable = false)
-    private String title;
-
+    @Lob
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "file_id", nullable = false, unique = true)
-    @JsonIgnore
-    private RecipeFile recipeFile;
-
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    private User user;
 
     @PrePersist
     public void prePersist() {

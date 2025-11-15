@@ -1,6 +1,7 @@
 package org.ai.chatbot_backend.integration;
 
 import lombok.extern.slf4j.Slf4j;
+import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.RecipeService;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,7 +31,8 @@ public class RecipeServiceIntegrationTests {
     }, delimiter = ';')
     public void whenGivenValidParams_thenReturnRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
 
-        String recipe = recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
+        CreateRecipeResult result = recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
+        String recipe = result.getRecipeMarkdown();
         log.info(recipe);
 
         assertThat(recipe).contains("Ingredients");

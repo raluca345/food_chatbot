@@ -8,4 +8,6 @@ public interface IRecipeFileService {
     Resource getRecipeFile(Long id);
 
     String getDownloadMarkdown(Long id, String backendBaseUrl);
+
+    void attachFileToUser(Long fileId, Long userId);
 }

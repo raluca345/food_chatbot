@@ -2,6 +2,7 @@ package org.ai.chatbot_backend.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.*;
@@ -13,9 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -45,32 +43,28 @@ public class GenAIController {
                                                  @RequestParam(defaultValue = "") String dietaryRestrictions,
                                                  Authentication authentication) {
         try {
-            String recipe = recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
+            CreateRecipeResult result = recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
 
             if (authentication != null && authentication.isAuthenticated()) {
                 String email = authentication.getName();
                 long userId = userService.findUserIdByEmail(email);
 
-                String title = recipeService.extractRecipeTitle(recipe);
+                String title = recipeService.extractRecipeTitle(result.contentWithoutDownload());
 
-                List<String> lines = Arrays.stream(recipe.split("\\R")).toList();
-                if (lines.size() > 2) {
-                    lines = lines.subList(0, lines.size() - 2);
-                }
-                String contentWithoutLink = String.join("\n", lines);
+                String contentWithoutLink = result.contentWithoutDownload().trim();
 
                 SaveRecipeInHistoryRequest recipeHistoryRequest = new SaveRecipeInHistoryRequest();
                 recipeHistoryRequest.setTitle(title);
                 recipeHistoryRequest.setContent(contentWithoutLink);
+                recipeHistoryRequest.setFileId(result.getFileId());
 
                 recipeHistoryService.save(userId, recipeHistoryRequest);
             }
 
-            return ResponseEntity.ok(recipe);
+            String fullText = result.toFullText();
+            return ResponseEntity.ok(fullText);
 
-        } catch (InappropriateRequestRefusalException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Something went wrong, please try again.");
         }
     }
