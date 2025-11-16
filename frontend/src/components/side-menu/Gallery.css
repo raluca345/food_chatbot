@@ -1,0 +1,136 @@
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.image-slot {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.image-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: 0.2s ease;
+}
+
+.image-slot:hover img {
+  filter: brightness(0.5);
+}
+
+.image-actions {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.image-slot:hover .image-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.image-action-btn {
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.image-action-btn:hover {
+  transform: scale(1.15);
+}
+
+.image-action-btn-download:hover {
+  color: var(--download-blue);
+}
+
+.image-action-btn-danger:hover {
+  color: var(--danger);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 40px;
+  z-index: 5000;
+
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  position: relative;
+  max-width: 40vw;
+  max-height: 40vh;
+  animation: popIn 0.2s ease-out;
+}
+
+.modal-content img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.modal-close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  padding: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.gallery-pagination {
+  margin-top: 20px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

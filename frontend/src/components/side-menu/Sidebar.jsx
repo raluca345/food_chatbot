@@ -32,7 +32,7 @@ export default function Sidebar({ isOpen, onToggle }) {
           <FaImages
             className="icon-inline sidebar-icon"
             title="Gallery"
-            onClick={() => navigate("/home/gallery")}
+            onClick={() => navigate("/me/gallery")}
           />
           {renderLabel("Gallery", () => navigate("/me/gallery"))}
         </span>
