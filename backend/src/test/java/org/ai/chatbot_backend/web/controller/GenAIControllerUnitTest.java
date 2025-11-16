@@ -1,5 +1,6 @@
-package org.ai.chatbot_backend.controller;
+package org.ai.chatbot_backend.web.controller;
 
+import org.ai.chatbot_backend.controller.GenAIController;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
@@ -59,7 +60,7 @@ class GenAIControllerUnitTest {
         var resp = genAIController.generateRecipe("ing", "any", "", auth);
 
         assertEquals(HttpStatusCode.valueOf(200), resp.getStatusCode());
-        assertEquals(recipeText, resp.getBody());
+        assertEquals(createResult.toFullText(), resp.getBody());
 
         ArgumentCaptor<SaveRecipeInHistoryRequest> captor = ArgumentCaptor.forClass(SaveRecipeInHistoryRequest.class);
         verify(recipeHistoryService, times(1)).save(eq(123L), captor.capture());

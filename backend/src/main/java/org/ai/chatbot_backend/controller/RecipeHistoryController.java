@@ -7,9 +7,10 @@ import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.exception.WrongOwnerException;
 import org.ai.chatbot_backend.model.RecipeFile;
 import org.ai.chatbot_backend.model.RecipeHistory;
-import org.ai.chatbot_backend.service.implementations.RecipeHistoryService;
+import org.ai.chatbot_backend.service.interfaces.IRecipeHistoryService;
 import org.ai.chatbot_backend.service.implementations.UserService;
 import org.ai.chatbot_backend.service.implementations.RecipeFileService;
+import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,15 +18,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users/me/recipes/history")
 public class RecipeHistoryController {
 
-    private final RecipeHistoryService recipeHistoryService;
+    private final IRecipeHistoryService recipeHistoryService;
     private final UserService userService;
     private final RecipeFileService recipeFileService;
 
@@ -40,20 +38,26 @@ public class RecipeHistoryController {
         String email = authentication.getName();
         long userId = userService.findUserIdByEmail(email);
         RecipeHistory recipeHistory = recipeHistoryService.save(userId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(recipeHistory));
+        return ResponseEntity.status(HttpStatus.CREATED).body(recipeHistory.toDto());
     }
 
     @GetMapping
-    public ResponseEntity<List<RecipeHistoryDto>> getHistory(Authentication authentication) {
+    public ResponseEntity<?> getHistory(
+            Authentication authentication,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+
         String email = authentication.getName();
         long userId = userService.findUserIdByEmail(email);
-        List<RecipeHistory> entries = recipeHistoryService.listForUser(userId);
-        List<RecipeHistoryDto> dtos = entries.stream().map(this::toDto).collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
+
+        RecipeHistoryPageDto pageDto = recipeHistoryService.getHistoryForUserPaged(userId, page, pageSize);
+        return ResponseEntity.ok(pageDto);
     }
 
     @DeleteMapping("{id}")
@@ -102,17 +106,5 @@ public class RecipeHistoryController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + fileId + ".txt")
                 .body(resource);
-    }
-
-    private RecipeHistoryDto toDto(RecipeHistory e) {
-        Long fileId = null;
-        if (e.getRecipeFile() != null) fileId = e.getRecipeFile().getId();
-        return new RecipeHistoryDto(
-                e.getId(),
-                e.getTitle(),
-                e.getContent(),
-                fileId,
-                e.getCreatedAt()
-        );
     }
 }

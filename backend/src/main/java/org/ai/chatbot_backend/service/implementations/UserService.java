@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.UserDto;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
-import org.ai.chatbot_backend.model.Role;
+import org.ai.chatbot_backend.enums.Role;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.UserRepository;
 import org.ai.chatbot_backend.service.interfaces.IUserService;
@@ -83,4 +83,8 @@ public class UserService implements IUserService {
         return saved;
     }
 
+    @Override
+    public User findById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
 }

@@ -3,6 +3,8 @@ package org.ai.chatbot_backend.service.implementations;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
+import org.ai.chatbot_backend.dto.RecipeHistoryDto;
+import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.exception.WrongOwnerException;
 import org.ai.chatbot_backend.model.RecipeHistory;
@@ -88,5 +90,30 @@ public class RecipeHistoryService implements IRecipeHistoryService {
     @Override
     public Optional<RecipeHistory> findById(Long id) {
         return recipeHistoryRepository.findById(id);
+    }
+
+    @Override
+    public RecipeHistoryPageDto getHistoryForUserPaged(Long userId, int page, int pageSize) {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+
+        List<RecipeHistory> entries = listForUser(userId);
+        if (entries == null || entries.isEmpty()) {
+            return new RecipeHistoryPageDto(List.copyOf(List.of()), 0);
+        }
+
+        int total = entries.size();
+        int start = (page - 1) * pageSize;
+        if (start >= total) {
+            return new RecipeHistoryPageDto(List.copyOf(List.of()), total);
+        }
+        int end = Math.min(start + pageSize, total);
+
+        List<RecipeHistoryDto> pageItems = entries.subList(start, end)
+                .stream()
+                .map(RecipeHistory::toDto)
+                .toList();
+
+        return new RecipeHistoryPageDto(List.copyOf(pageItems), total);
     }
 }

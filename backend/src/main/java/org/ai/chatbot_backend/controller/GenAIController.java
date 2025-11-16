@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
+import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.service.implementations.*;
-import org.springframework.ai.image.ImageResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -49,7 +49,7 @@ public class GenAIController {
                 String email = authentication.getName();
                 long userId = userService.findUserIdByEmail(email);
 
-                String title = recipeService.extractRecipeTitle(result.contentWithoutDownload());
+                String title = recipeService.extractRecipeTitle(result.getRecipeMarkdown());
 
                 String contentWithoutLink = result.contentWithoutDownload().trim();
 
@@ -64,6 +64,8 @@ public class GenAIController {
             String fullText = result.toFullText();
             return ResponseEntity.ok(fullText);
 
+        } catch (InappropriateRequestRefusalException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Something went wrong, please try again.");
         }
@@ -80,7 +82,9 @@ public class GenAIController {
 
 
     @PostMapping("food-images")
-    public ResponseEntity<String> generateFoodImage(@RequestParam(defaultValue = "") String name,
+    public ResponseEntity<String> generateFoodImage(
+                                    Authentication authentication,
+                                    @RequestParam(defaultValue = "") String name,
                                     @RequestParam String style,
                                     @RequestParam(defaultValue = "1024x1024") String size,
                                     @RequestParam(required = false) String course,
@@ -97,22 +101,31 @@ public class GenAIController {
         }
 
         try {
-            ImageResponse imageResponse = imageService.generateDishImageFromParams(
+            String tempImageUrl = imageService.generateFoodImageFromParams(
                     name, course, mainIngredient, dishType, style, size);
 
-            if (imageResponse.getResults().isEmpty()) {
+            if (tempImageUrl.isEmpty()) {
                 throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
             }
 
-            log.info(imageResponse.getResult().getOutput().getUrl());
-            return ResponseEntity.ok(imageResponse.getResult().getOutput().getUrl());
+            log.info(tempImageUrl);
+
+            User user = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User principal) {
+                user = principal;
+            }
+
+            if (user != null) {
+                String publicImageUrl = imageService.persistImageForUser(tempImageUrl, user.getId());
+                log.info(publicImageUrl);
+                return ResponseEntity.ok(publicImageUrl);
+            }
+
+            return ResponseEntity.ok(tempImageUrl);
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not generate image, please try again.");
         }
-    }
-
-    @GetMapping("my-images")
-    public ResponseEntity<String> gatGallery() {
-        return ResponseEntity.ok("Gallery placeholder");
     }
 }

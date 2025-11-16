@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import org.ai.chatbot_backend.dto.RecipeHistoryDto;
+
 @Entity
 @Data
 @Table(name = "recipe_history")
@@ -43,5 +45,19 @@ public class RecipeHistory {
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    public RecipeHistoryDto toDto() {
+        Long fileId = null;
+        if (this.recipeFile != null) {
+            fileId = this.recipeFile.getId();
+        }
+        return new RecipeHistoryDto(
+                this.id,
+                this.title,
+                this.content,
+                fileId,
+                this.createdAt
+        );
     }
 }

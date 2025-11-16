@@ -1,18 +1,17 @@
 package org.ai.chatbot_backend.validation;
 
 import lombok.extern.slf4j.Slf4j;
+import org.ai.chatbot_backend.config.JwtService;
 import org.ai.chatbot_backend.controller.GenAIController;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
-import org.ai.chatbot_backend.service.implementations.ChatService;
-import org.ai.chatbot_backend.service.implementations.ImageService;
-import org.ai.chatbot_backend.service.implementations.RecipeService;
+import org.ai.chatbot_backend.service.implementations.*;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.ai.image.ImageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -28,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @WebMvcTest(GenAIController.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class GenIControllerValidationTests {
 
     @Autowired
@@ -39,6 +39,14 @@ public class GenIControllerValidationTests {
     private ImageService imageService;
     @MockitoBean
     private RecipeService recipeService;
+    @MockitoBean
+    private RecipeFileService recipeFileService;
+    @MockitoBean
+    private UserService userService;
+    @MockitoBean
+    private RecipeHistoryService recipeHistoryService;
+    @MockitoBean
+    private JwtService jwtService;
 
     @ParameterizedTest
     @CsvSource({
@@ -46,12 +54,9 @@ public class GenIControllerValidationTests {
             "natural"
     })
     void whenValidStyles_thenReturnsImageUrl(String style) throws Exception {
-        ImageResponse mockImageResponse = mock(ImageResponse.class, RETURNS_DEEP_STUBS);
-        when(mockImageResponse.getResult().getOutput().getUrl()).thenReturn("https://dalleprodsec.blob.core.");
-
-        when(imageService.generateDishImageFromParams(any(), isNull(), isNull(), isNull(), any(),
+        when(imageService.generateFoodImageFromParams(any(), isNull(), isNull(), isNull(), any(),
                 any()))
-                .thenReturn(mockImageResponse);
+                .thenReturn("https://dalleprodsec.blob.core.");
 
         mockMvc.perform(post("/api/v1/food-images")
                 .param("name", "Pizza")
@@ -79,12 +84,9 @@ public class GenIControllerValidationTests {
             "1792x1024"
     })
     void whenValidSizes_thenReturnsImageUrl(String size) throws Exception {
-        ImageResponse mockImageResponse = mock(ImageResponse.class, RETURNS_DEEP_STUBS);
-        when(mockImageResponse.getResult().getOutput().getUrl()).thenReturn("https://dalleprodsec.blob.core.");
-
-        when(imageService.generateDishImageFromParams(any(), isNull(), isNull(), isNull(), any(),
+        when(imageService.generateFoodImageFromParams(any(), isNull(), isNull(), isNull(), any(),
                 any()))
-                .thenReturn(mockImageResponse);
+                .thenReturn("https://dalleprodsec.blob.core.");
 
         mockMvc.perform(post("/api/v1/food-images")
                         .param("name", "Pizza")
@@ -96,7 +98,7 @@ public class GenIControllerValidationTests {
 
     @Test
     void whenEmptyImageResponse_thenReturnsErrorMessage() throws Exception {
-        when(imageService.generateDishImageFromParams(any(), any(), any(), any(), any(), any()))
+        when(imageService.generateFoodImageFromParams(any(), any(), any(), any(), any(), any()))
             .thenThrow(new InappropriateRequestRefusalException("Sorry, I can't help with that request."));
 
         mockMvc.perform(post("/api/v1/food-images")
@@ -117,11 +119,9 @@ public class GenIControllerValidationTests {
     })
     void whenOptionalParamsPresent_thenReturnsImageUrl(String name, String style, String size, String course,
                                                        String ingredients, String dishType) throws Exception {
-        ImageResponse mockImageResponse = mock(ImageResponse.class, RETURNS_DEEP_STUBS);
-        when(mockImageResponse.getResult().getOutput().getUrl()).thenReturn("https://dalleprodsec.blob.core.");
-        when(imageService.generateDishImageFromParams(any(), any(), any(), any(), any(),
+        when(imageService.generateFoodImageFromParams(any(), any(), any(), any(), any(),
                 any()))
-                .thenReturn(mockImageResponse);
+                .thenReturn("https://dalleprodsec.blob.core.");
         mockMvc.perform(post("/api/v1/food-images")
                 .param("name", name)
                 .param("style", style)
@@ -148,7 +148,7 @@ public class GenIControllerValidationTests {
     })
     void whenForbiddenOrNonsenseParams_thenReturnsError(String name, String style, String size, String course,
                                                         String ingredients, String dishType) throws Exception {
-        when(imageService.generateDishImageFromParams(any(), any(), any(), any(), any(), any()))
+        when(imageService.generateFoodImageFromParams(any(), any(), any(), any(), any(), any()))
                 .thenThrow(new InappropriateRequestRefusalException("Sorry, I can't help with that request."));
 
         mockMvc.perform(post("/api/v1/food-images")
@@ -176,7 +176,7 @@ public class GenIControllerValidationTests {
         log.info("name = {}, style = {}, size = {}, course = {}, ingredients = {}, dishType = {}", name, style,
                 size, course, ingredients, dishType);
 
-        when(imageService.generateDishImageFromParams(any(), any(), any(), any(), any(), any()))
+        when(imageService.generateFoodImageFromParams(any(), any(), any(), any(), any(), any()))
                 .thenThrow(new InappropriateRequestRefusalException("Sorry, I can't help with that request."));
 
 

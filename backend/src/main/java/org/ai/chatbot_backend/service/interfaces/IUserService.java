@@ -13,4 +13,6 @@ public interface IUserService {
     long findUserIdByEmail(String name);
 
     List<UserDto> findAllUsers();
+
+    User findById(Long userId);
 }

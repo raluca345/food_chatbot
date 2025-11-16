@@ -1,6 +1,7 @@
-package org.ai.chatbot_backend.controller;
+package org.ai.chatbot_backend.web.controller;
 
 import org.ai.chatbot_backend.config.JwtService;
+import org.ai.chatbot_backend.controller.GenAIController;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
@@ -63,7 +64,7 @@ class GenAIControllerWebMvcTest {
                 .with(csrf())
                 .param("ingredients", "ing"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(recipeText));
+                .andExpect(content().string(createResult.toFullText()));
 
         ArgumentCaptor<SaveRecipeInHistoryRequest> captor = ArgumentCaptor.forClass(SaveRecipeInHistoryRequest.class);
         verify(recipeHistoryService, times(1)).save(eq(123L), captor.capture());

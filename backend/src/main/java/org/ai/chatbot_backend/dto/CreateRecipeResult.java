@@ -22,10 +22,6 @@ public class CreateRecipeResult {
 
     public String contentWithoutDownload() {
         String content = recipeMarkdown == null ? "" : recipeMarkdown;
-        if (downloadMarkdown != null && !downloadMarkdown.isBlank()) {
-            return content;
-        }
-
 
         int idx = content.lastIndexOf("\n\nYou can download this recipe here:");
         if (idx != -1) {
@@ -35,6 +31,21 @@ public class CreateRecipeResult {
         if (idx2 != -1) {
             return content.substring(0, idx2).trim();
         }
+
+        int idx3 = content.lastIndexOf("\n\nDownload link here");
+        if (idx3 != -1) {
+            return content.substring(0, idx3).trim();
+        }
+
+
+        String trimmed = content.trim();
+        if (trimmed.endsWith("Download link here")) {
+            int pos = content.lastIndexOf("Download link here");
+            if (pos != -1) {
+                return content.substring(0, pos).trim();
+            }
+        }
+
         return content;
     }
 }

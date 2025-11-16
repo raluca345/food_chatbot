@@ -3,7 +3,6 @@ package org.ai.chatbot_backend.integration;
 import com.azure.core.exception.HttpResponseException;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.ImageService;
-import org.springframework.ai.image.ImageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.ai.azure.openai.AzureOpenAiImageModel;
@@ -33,11 +32,11 @@ public class ImageServiceIntegrationTests {
     }, delimiter = ';', nullValues = "null")
     public void whenGivenValidParams_thenReturnImage(String name, String course, String ingredients, String dishType,
                                                         String style, String size) {
-        ImageResponse response = imageService.generateDishImageFromParams(name, course, ingredients, dishType, style,
+        String imageUrl = imageService.generateFoodImageFromParams(name, course, ingredients, dishType, style,
                                                                 size);
-        assertThat(response).isNotNull();
-        assertThat(response.getResult().getOutput().getUrl()).isInstanceOf(String.class);
-        assertThat(response.getResult().getOutput().getUrl()).startsWith("https://dalleprodsec.blob.core.");
+        assertThat(imageUrl).isNotNull();
+        assertThat(imageUrl).isInstanceOf(String.class);
+        assertThat(imageUrl).startsWith("https://dalleprodsec.blob.core.");
     }
 
     @ParameterizedTest
@@ -58,7 +57,7 @@ public class ImageServiceIntegrationTests {
         HttpResponseException httpEx = mock(HttpResponseException.class);
         when(azureOpenAiImageModel.call(any())).thenThrow(httpEx);
         assertThatThrownBy(() ->
-            imageService.generateDishImageFromParams(name, course, ingredients, dishType, style, size)
+            imageService.generateFoodImageFromParams(name, course, ingredients, dishType, style, size)
         ).isInstanceOf(InappropriateRequestRefusalException.class);
     }
 }
