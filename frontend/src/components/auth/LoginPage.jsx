@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AuthPage.css";
+import PasswordInput from "../commons/PasswordInput";
+import { loginUser } from "../../api/homeApi";
 
 export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
@@ -25,24 +27,12 @@ export default function LoginPage() {
     setErrorMessage("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        setErrorMessage(errorText || "Login failed");
-        return;
-      }
-
-      const data = await response.json();
+      const data = await loginUser(formData);
       localStorage.setItem("token", data.token);
       navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
-      setErrorMessage(err.message);
+      setErrorMessage(err.message || "Login failed");
     }
   };
 
@@ -65,16 +55,22 @@ export default function LoginPage() {
           </div>
           <div className="user-form-row">
             <label>Password:</label>
-            <input
-              className="user-form-input"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-            />
+            <PasswordInput value={formData.password} onChange={handleChange} />
           </div>
+          <p className="reset-password-link">
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/forgot");
+              }}
+            >
+              Forgot Password?
+            </a>
+          </p>
           <div className="user-form-actions">
             <button
+              type="button"
               onClick={returnToPreviousPage}
               className="sign-up-cancel-btn"
             >

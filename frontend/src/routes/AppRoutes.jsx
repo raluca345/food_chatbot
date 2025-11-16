@@ -8,6 +8,7 @@ import LoginPage from "../components/auth/LoginPage";
 import NotFound from "../components/NotFound";
 import RecipeHistory from "../components/side-menu/RecipeHistory";
 import Gallery from "../components/side-menu/Gallery";
+import ForgotPassword from "../components/auth/ForgotPassword";
 
 export default function AppRoutes() {
   return (
@@ -19,6 +20,7 @@ export default function AppRoutes() {
       <Route path="/home/recipe-generator" element={<RecipeGenerator />} />
       <Route path="/sign-up" element={<SignUpPage />}></Route>
       <Route path="/login" element={<LoginPage />}></Route>
+      <Route path="/forgot" element={<ForgotPassword />}></Route>
       <Route path="/me/recipe-history" element={<RecipeHistory />}></Route>
       <Route path="me/gallery" element={<Gallery />}></Route>
       <Route path="*" element={<NotFound />}></Route>

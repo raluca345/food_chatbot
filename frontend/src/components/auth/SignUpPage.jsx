@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./AuthPage.css";
+import PasswordInput from "../commons/PasswordInput";
+import { registerUser } from "../../api/homeApi";
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -19,29 +21,13 @@ const SignUpPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
-
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/v1/auth/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Registration failed");
-      }
-
-      const data = await response.json();
+      const data = await registerUser(formData);
       localStorage.setItem("token", data.token);
-
       navigate("/home");
     } catch (error) {
       console.error("Registration error:", error);
-      setErrorMessage(error.message);
+      setErrorMessage(error.message || "Registration failed");
     }
   };
 
@@ -77,13 +63,7 @@ const SignUpPage = () => {
           </div>
           <div className="user-form-row">
             <label>Password:</label>
-            <input
-              className="user-form-input"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-            />
+            <PasswordInput value={formData.password} onChange={handleChange} />
           </div>
           <p>
             Already have an account?{" "}
@@ -92,7 +72,7 @@ const SignUpPage = () => {
             </Link>
           </p>
           <div className="user-form-actions">
-            <button onClick={returnToHome} className="sign-up-cancel-btn">
+            <button type="button" onClick={returnToHome} className="sign-up-cancel-btn">
               Cancel
             </button>
             <button type="submit" className="sign-up-btn">

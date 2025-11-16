@@ -151,6 +151,38 @@ export async function getUserImages({ page = 1, pageSize = 18 } = {}) {
   return { items: [], total: 0 };
 }
 
+export async function registerUser(data) {
+  const url = `${API_BASE}/api/v1/auth/register`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Registration failed");
+  }
+
+  return res.json();
+}
+
+export async function loginUser(credentials) {
+  const url = `${API_BASE}/api/v1/auth/login`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Login failed");
+  }
+
+  return res.json();
+}
+
 export async function downloadImage(id) {
   const url = `${API_BASE}/api/v1/users/me/images/${id}/download`;
 
