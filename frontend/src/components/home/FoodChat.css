@@ -31,6 +31,7 @@
 
 .reply-btn-wrap button {
   background: transparent;
+  color: black;
   border: 1px solid #ddd;
   padding: 6px 10px;
   border-radius: 4px;
@@ -38,7 +39,8 @@
 }
 
 .reply-btn-wrap button:hover {
-  background: #f0f0f0;
+  background-color: var(--brown-contrast);
+  color: white;
 }
 
 .output {

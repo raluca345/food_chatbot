@@ -3,17 +3,20 @@ package org.ai.chatbot_backend.service.implementations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.UserDto;
+import org.ai.chatbot_backend.exception.DuplicateEmailException;
+import org.ai.chatbot_backend.exception.InvalidUserDataException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.enums.Role;
+import org.ai.chatbot_backend.exception.PasswordResetTokenExpiredException;
+import org.ai.chatbot_backend.model.PasswordResetToken;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.UserRepository;
 import org.ai.chatbot_backend.service.interfaces.IUserService;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -23,26 +26,25 @@ public class UserService implements IUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetTokenService passwordResetTokenService;
 
     @Override
     public void saveUser(UserDto userDto) {
-        User user = new User();
-        user.setName(userDto.getName());
-        user.setEmail(userDto.getEmail());
-        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-
-        user.setRole(Role.USER);
-        userRepository.save(user);
+        createUser(userDto.getName(), userDto.getEmail(), userDto.getPassword());
     }
 
     @Override
     public User findUserByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String normalized = email == null ? null : email.trim().toLowerCase();
+        return userRepository.findByEmail(normalized)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     @Override
-    public long findUserIdByEmail(String name) {
-        return userRepository.findIdByEmail(name).orElseThrow(() -> new ResourceNotFoundException("User id not found"));
+    public long findUserIdByEmail(String email) {
+        String normalized = email == null ? null : email.trim().toLowerCase();
+        return userRepository.findIdByEmail(normalized)
+                .orElseThrow(() -> new ResourceNotFoundException("User id not found"));
     }
 
     @Override
@@ -65,11 +67,11 @@ public class UserService implements IUserService {
         String trimmedEmail = email == null ? null : email.trim().toLowerCase();
         String trimmedName = name == null ? null : name.trim();
         if (trimmedEmail == null || rawPassword == null || trimmedName == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing required fields");
+            throw new InvalidUserDataException("Missing required fields");
         }
         if (userRepository.existsByEmail(trimmedEmail)) {
             log.debug("Attempt to register duplicate email: {}", trimmedEmail);
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+            throw new DuplicateEmailException("Email already registered");
         }
         String encoded = passwordEncoder.encode(rawPassword);
         User user = User.builder()
@@ -87,4 +89,33 @@ public class UserService implements IUserService {
     public User findById(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
+
+    @Override
+    public PasswordResetToken generatePasswordResetTokenForUser(User user) {
+        String token = UUID.randomUUID().toString();
+
+        return passwordResetTokenService.saveToken(user, token);
+    }
+
+    public boolean validatePasswordResetTokenOrThrow(String token) {
+        PasswordResetToken prt = passwordResetTokenService.findByToken(token);
+        if (prt == null) {
+            throw new ResourceNotFoundException("Token not found");
+        }
+        if (prt.getExpiryDate() == null || prt.getExpiryDate().before(new java.util.Date())) {
+            throw new PasswordResetTokenExpiredException("Token expired");
+        }
+        return true;
+    }
+
+    @Override
+    public void changeUserPassword(User user, String password) {
+        if (password == null) {
+            throw new ResourceNotFoundException("Missing required fields");
+        }
+        user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
+    }
+
+
 }

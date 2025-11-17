@@ -6,6 +6,7 @@ import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.model.User;
+import org.ai.chatbot_backend.security.AuthHelper;
 import org.ai.chatbot_backend.service.implementations.*;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -25,8 +26,8 @@ public class GenAIController {
     private final ImageService imageService;
     private final RecipeService recipeService;
     private final RecipeFileService recipeFileService;
-    private final UserService userService;
     private final RecipeHistoryService recipeHistoryService;
+    private final AuthHelper authHelper;
 
     @PostMapping("messages")
     public ResponseEntity<String> getResponse(@RequestParam String prompt) {
@@ -44,26 +45,18 @@ public class GenAIController {
                                                  Authentication authentication) {
         try {
             CreateRecipeResult result = recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
-
-            if (authentication != null && authentication.isAuthenticated()) {
-                String email = authentication.getName();
-                long userId = userService.findUserIdByEmail(email);
-
+            User user = authHelper.getAuthenticatedUserOrNull(authentication);
+            if (user != null) {
                 String title = recipeService.extractRecipeTitle(result.getRecipeMarkdown());
-
                 String contentWithoutLink = result.contentWithoutDownload().trim();
-
                 SaveRecipeInHistoryRequest recipeHistoryRequest = new SaveRecipeInHistoryRequest();
                 recipeHistoryRequest.setTitle(title);
                 recipeHistoryRequest.setContent(contentWithoutLink);
                 recipeHistoryRequest.setFileId(result.getFileId());
-
-                recipeHistoryService.save(userId, recipeHistoryRequest);
+                recipeHistoryService.save(user.getId(), recipeHistoryRequest);
             }
-
             String fullText = result.toFullText();
             return ResponseEntity.ok(fullText);
-
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
@@ -82,8 +75,7 @@ public class GenAIController {
 
 
     @PostMapping("food-images")
-    public ResponseEntity<String> generateFoodImage(
-                                    Authentication authentication,
+    public ResponseEntity<String> generateFoodImage(Authentication authentication,
                                     @RequestParam(defaultValue = "") String name,
                                     @RequestParam String style,
                                     @RequestParam(defaultValue = "1024x1024") String size,
@@ -101,26 +93,17 @@ public class GenAIController {
         }
 
         try {
-            String tempImageUrl = imageService.generateFoodImageFromParams(
-                    name, course, mainIngredient, dishType, style, size);
-
+            String tempImageUrl = imageService.generateFoodImageFromParams(name, course, mainIngredient, dishType, style, size);
             if (tempImageUrl.isEmpty()) {
                 throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
             }
-
             log.info(tempImageUrl);
-
-            User user = null;
-            if (authentication != null && authentication.getPrincipal() instanceof User principal) {
-                user = principal;
-            }
-
+            User user = authHelper.getAuthenticatedUserOrNull(authentication);
             if (user != null) {
                 String publicImageUrl = imageService.persistImageForUser(tempImageUrl, user.getId());
                 log.info(publicImageUrl);
                 return ResponseEntity.ok(publicImageUrl);
             }
-
             return ResponseEntity.ok(tempImageUrl);
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

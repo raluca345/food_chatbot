@@ -46,6 +46,7 @@ function App() {
   const isSignUpPage = location.pathname === "/sign-up";
   const isLoginPage = location.pathname === "/login";
   const isForgotPage = location.pathname === "/forgot";
+  const isResetPage = location.pathname === "/reset-password";
   const token = getToken();
   const isLoggedIn = Boolean(token);
   const userEmail = token ? getEmailFromToken(token) : null;
@@ -53,11 +54,11 @@ function App() {
   return (
     <div className="App">
       <article>
-        {!isForgotPage && !isLoginPage && !isSignUpPage && isLoggedIn && (
+        {!isForgotPage && !isLoginPage && !isSignUpPage && !isResetPage && isLoggedIn && (
           <Sidebar isOpen={isSideBarOpen} onToggle={toggleSidebar} />
         )}
         <section>
-          {!isSignUpPage && !isLoginPage && !isForgotPage && (
+          {!isSignUpPage && !isLoginPage && !isForgotPage && !isResetPage && (
             <header className="app-header">
               <Tabs />
 

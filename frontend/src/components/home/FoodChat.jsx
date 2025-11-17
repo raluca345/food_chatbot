@@ -7,7 +7,7 @@ import {
   markdownComponents,
 } from "../../utils/sanitizeMarkdown";
 import { generateMessage } from "../../api/homeApi";
-import { getNameFromToken } from "../../utils/jwt";
+import { getIdFromToken, getNameFromToken } from "../../utils/jwt";
 
 function FoodChat() {
   const [prompt, setPrompt] = useState("");
@@ -24,6 +24,12 @@ function FoodChat() {
     return getNameFromToken(token);
   }, []);
 
+  const userId = useMemo(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    return getIdFromToken(token);
+  });
+
   useEffect(() => {
     if (outputRef.current) {
       outputRef.current.scrollTo({
@@ -36,7 +42,6 @@ function FoodChat() {
   const askFoodAi = async () => {
     if (!prompt.trim()) return;
 
-    const userId = Date.now();
     const userMsg = { id: userId, role: "user", content: prompt };
     setMessages((m) => [...m, userMsg]);
     setLoading(true);
@@ -53,7 +58,8 @@ function FoodChat() {
       setLastMessageId(assistantId);
       setChatResponse(data);
     } catch (err) {
-      const errTxt = err?.message || "Error: Unable to fetch response";
+      console.error("generate message error:", err);
+      const errTxt = err?.userMessage || err?.message || "Error: Unable to fetch response";
       setChatResponse(errTxt);
       const assistantId = Date.now() + 1;
       setMessages((m) => [
@@ -99,52 +105,48 @@ function FoodChat() {
       {loading && <Spinner />}
       <div className="output">
         <div className="recipe-text" ref={outputRef}>
-          {messages.length === 0 ? (
-            <p>Start the conversation by asking a question.</p>
-          ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={
-                  (msg.id === lastMessageId ? "new-message " : "") +
-                  (msg.role === "assistant"
-                    ? "message assistant"
-                    : "message user")
-                }
-              >
-                <div className="message-meta">
-                  {msg.role === "assistant" ? "Assistant" : "You"}
-                </div>
-                <div className="message-body">
-                  <ReactMarkdown
-                    rehypePlugins={rehypePlugins}
-                    components={markdownComponents}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
-                </div>
-                {msg.role === "assistant" && (
-                  <div className="reply-btn-wrap">
-                    <button
-                      onClick={() => {
-                        const quoted = msg.content
-                          .replace(/\r/g, "")
-                          .split("\n")
-                          .map((l) => (l.trim() ? `> ${l}` : ">"))
-                          .join("\n");
-                        const withSpacing = quoted + "\n\n";
-                        setPrompt((p) =>
-                          p ? p + "\n" + withSpacing : withSpacing
-                        );
-                      }}
-                    >
-                      Reply
-                    </button>
-                  </div>
-                )}
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={
+                (msg.id === lastMessageId ? "new-message " : "") +
+                (msg.role === "assistant"
+                  ? "message assistant"
+                  : "message user")
+              }
+            >
+              <div className="message-meta">
+                {msg.role === "assistant" ? "Assistant" : "You"}
               </div>
-            ))
-          )}
+              <div className="message-body">
+                <ReactMarkdown
+                  rehypePlugins={rehypePlugins}
+                  components={markdownComponents}
+                >
+                  {msg.content}
+                </ReactMarkdown>
+              </div>
+              {msg.role === "assistant" && (
+                <div className="reply-btn-wrap">
+                  <button
+                    onClick={() => {
+                      const quoted = msg.content
+                        .replace(/\r/g, "")
+                        .split("\n")
+                        .map((l) => (l.trim() ? `> ${l}` : ">"))
+                        .join("\n");
+                      const withSpacing = quoted + "\n\n";
+                      setPrompt((p) =>
+                        p ? p + "\n" + withSpacing : withSpacing
+                      );
+                    }}
+                  >
+                    Reply
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

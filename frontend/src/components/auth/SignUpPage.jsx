@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./AuthPage.css";
 import PasswordInput from "../commons/PasswordInput";
@@ -11,7 +11,14 @@ const SignUpPage = () => {
     password: "",
   });
   const [errorMessage, setErrorMessage] = useState("");
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (formData.password && formData.password.length >= 8 && attemptedSubmit) {
+      setAttemptedSubmit(false);
+    }
+  }, [formData.password, attemptedSubmit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,13 +28,20 @@ const SignUpPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
+    setAttemptedSubmit(true);
+    if (!formData.password || formData.password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
+      return;
+    }
     try {
       const data = await registerUser(formData);
       localStorage.setItem("token", data.token);
       navigate("/home");
     } catch (error) {
       console.error("Registration error:", error);
-      setErrorMessage(error.message || "Registration failed");
+      setErrorMessage(
+        error?.userMessage || "Registration failed. Please try again."
+      );
     }
   };
 
@@ -63,7 +77,12 @@ const SignUpPage = () => {
           </div>
           <div className="user-form-row">
             <label>Password:</label>
-            <PasswordInput value={formData.password} onChange={handleChange} />
+            <PasswordInput
+              value={formData.password}
+              onChange={handleChange}
+              minLength={8}
+              showValidation={attemptedSubmit}
+            />
           </div>
           <p>
             Already have an account?{" "}
@@ -72,7 +91,11 @@ const SignUpPage = () => {
             </Link>
           </p>
           <div className="user-form-actions">
-            <button type="button" onClick={returnToHome} className="sign-up-cancel-btn">
+            <button
+              type="button"
+              onClick={returnToHome}
+              className="sign-up-cancel-btn"
+            >
               Cancel
             </button>
             <button type="submit" className="sign-up-btn">

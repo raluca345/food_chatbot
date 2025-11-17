@@ -3,7 +3,13 @@ package org.ai.chatbot_backend.auth;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ai.chatbot_backend.exception.DuplicateEmailException;
+import org.ai.chatbot_backend.exception.InvalidUserDataException;
+import org.ai.chatbot_backend.exception.ResourceNotFoundException;
+import org.ai.chatbot_backend.exception.UserNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -17,12 +23,34 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+        try {
+            return ResponseEntity.ok(authService.register(request));
+        } catch (InvalidUserDataException e) {
+            log.debug("Register failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (DuplicateEmailException e) {
+            log.debug("Register duplicate email: {}", request.getEmail());
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (Exception e) {
+            log.error("Register unexpected error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
         log.debug("Login attempt for email: {}", request.getEmail());
-        return ResponseEntity.ok(authService.login(request));
+        try {
+            return ResponseEntity.ok(authService.login(request));
+        } catch (AuthenticationException e) {
+            log.debug("Authentication failed for email: {}", request.getEmail());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (UserNotFoundException | ResourceNotFoundException e) {
+            log.debug("User not found for email: {}", request.getEmail());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (Exception e) {
+            log.error("Login unexpected error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

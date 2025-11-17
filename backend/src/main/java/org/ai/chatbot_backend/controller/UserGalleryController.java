@@ -6,6 +6,7 @@ import org.ai.chatbot_backend.dto.ImageContent;
 import org.ai.chatbot_backend.dto.ImagePageDto;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.User;
+import org.ai.chatbot_backend.security.AuthHelper;
 import org.ai.chatbot_backend.service.interfaces.IImageService;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -23,46 +24,34 @@ import org.springframework.web.bind.annotation.*;
 public class UserGalleryController {
 
     private final IImageService imageService;
+    private final AuthHelper authHelper;
 
     @GetMapping("/me/images")
     public ResponseEntity<ImagePageDto> getMyImages(Authentication authentication,
                                         @RequestParam(defaultValue = "1") int page,
                                         @RequestParam(defaultValue = "18") int pageSize) {
 
-        if (authentication == null || !authentication.isAuthenticated()) {
+        User user = authHelper.getAuthenticatedUserOrNull(authentication);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        Object principalObj = authentication.getPrincipal();
-        if (!(principalObj instanceof User user)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         ImagePageDto pageDto = imageService.getImagesForUserPaged(user, page, pageSize);
         return ResponseEntity.ok(pageDto);
     }
 
     @GetMapping("/me/images/{imageId}/download")
     public ResponseEntity<Resource> downloadImage(Authentication authentication, @PathVariable("imageId") Long imageId) {
-        if (authentication == null || !authentication.isAuthenticated()) {
+        User user = authHelper.getAuthenticatedUserOrNull(authentication);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        Object principalObj = authentication.getPrincipal();
-        if (!(principalObj instanceof User user)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         try {
             ImageContent content = imageService.loadImageContentForUser(imageId, user);
-
             MediaType mediaType = MediaType.parseMediaType(content.contentType());
-
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + content.filename() + "\"")
                     .contentType(mediaType)
                     .body(content.resource());
-
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (AccessDeniedException e) {
@@ -74,26 +63,17 @@ public class UserGalleryController {
     }
 
     @DeleteMapping("/me/images/{imageId}")
-    public ResponseEntity<Void> deleteImage(
-            Authentication authentication,
+    public ResponseEntity<Void> deleteImage(Authentication authentication,
             @PathVariable long imageId) {
-
-        if (authentication == null || !authentication.isAuthenticated()) {
+        User user = authHelper.getAuthenticatedUserOrNull(authentication);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        Object principal = authentication.getPrincipal();
-        if (!(principal instanceof User user)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         try {
             imageService.deleteByIdForUser(imageId, user);
             return ResponseEntity.noContent().build();
-
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
-
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

@@ -38,6 +38,7 @@
   text-align: left;
   font-size: 15px;
   cursor: pointer;
+  color: black;
 }
 
 .dropdown-menu button:hover {

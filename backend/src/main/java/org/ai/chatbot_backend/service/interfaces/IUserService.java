@@ -1,6 +1,7 @@
 package org.ai.chatbot_backend.service.interfaces;
 
 import org.ai.chatbot_backend.dto.UserDto;
+import org.ai.chatbot_backend.model.PasswordResetToken;
 import org.ai.chatbot_backend.model.User;
 
 import java.util.List;
@@ -15,4 +16,10 @@ public interface IUserService {
     List<UserDto> findAllUsers();
 
     User findById(Long userId);
+
+    PasswordResetToken generatePasswordResetTokenForUser(User user);
+
+    boolean validatePasswordResetTokenOrThrow(String token);
+
+    void changeUserPassword(User user, String password);
 }

@@ -44,7 +44,8 @@ export default function RecipeHistory() {
       })
       .catch((err) => {
         if (!mounted) return;
-        setError(err?.message || "Failed to load history");
+        console.error("Failed to load history:", err);
+        setError(err?.userMessage || "Failed to load recipe history. Please try again later.");
       })
       .finally(() => {
         if (!mounted) return;
@@ -74,14 +75,15 @@ export default function RecipeHistory() {
       if (next.length === 0 && page > 1) {
         setPage((p) => p - 1);
       }
-    } catch (err) {
+      } catch (err) {
       setHistoryEntries(prev);
       setDeletingIds((s) => {
         const n = new Set(s);
         n.delete(entryId);
         return n;
       });
-      setError(err?.message || "Failed to delete entry");
+        console.error("Failed to delete history entry:", err);
+        setError(err?.userMessage || "Failed to delete entry. Please try again.");
     }
   };
 
@@ -117,12 +119,12 @@ export default function RecipeHistory() {
           URL.revokeObjectURL(url);
         } catch (err) {
           console.error("Download failed", err);
-          setError("Failed to download recipe");
+          setError(err?.userMessage || "Failed to download recipe. Please try again.");
         }
       })
       .catch((err) => {
         console.error("Download request failed", err);
-        setError(err?.message || "Failed to download recipe");
+        setError(err?.userMessage || "Failed to download recipe. Please try again.");
       })
       .finally(() => {
         setDownloadingIds((s) => {

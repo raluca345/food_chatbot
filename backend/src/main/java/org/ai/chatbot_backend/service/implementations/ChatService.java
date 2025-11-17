@@ -8,13 +8,20 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.regex.Pattern;
+
 @Service
 @RequiredArgsConstructor
 public class ChatService implements IChatService {
     private final ChatModel chatModel;
     private final RecipeFileService recipeFileService;
 
-    @Value("${app.backendBaseUrl:http://localhost:8080}")
+    private static final Pattern RECIPE_PATTERN = Pattern.compile(
+            "(?s)^###\\s+.+?\\R+####\\s+Ingredients:.*?####\\s+Instructions:",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    @Value("${app.backend-base-url}")
     private String backendBaseUrl;
 
     @Override
@@ -28,7 +35,29 @@ public class ChatService implements IChatService {
 
     @Override
     public boolean looksLikeRecipe(String text) {
-        return text.toLowerCase().contains("ingredients") && text.toLowerCase().contains("instructions");
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+
+        if (text.toLowerCase().contains("i cannot") ||
+                text.toLowerCase().contains("i'm sorry") ||
+                text.toLowerCase().contains("unable to") ||
+                text.toLowerCase().contains("clarify") ||
+                text.toLowerCase().contains("illegal") ||
+                text.toLowerCase().contains("inappropriate")) {
+            return false;
+        }
+
+        if (RECIPE_PATTERN.matcher(text).find()) {
+            return true;
+        }
+
+        String lower = text.toLowerCase();
+        boolean hasTitle = text.trim().startsWith("###");
+        boolean hasIngredients = lower.contains("ingredients");
+        boolean hasInstructions = lower.contains("instructions");
+
+        return hasTitle && hasIngredients && hasInstructions;
     }
 
     @Override

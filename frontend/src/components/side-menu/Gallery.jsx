@@ -47,7 +47,7 @@ export default function Gallery() {
     } catch (err) {
       console.error(err);
       if (isMounted.current) {
-        setError("Failed to fetch images.");
+        setError(err?.userMessage || "Failed to fetch images.");
         setTotal(0);
       }
     } finally {
@@ -89,7 +89,7 @@ export default function Gallery() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Download error:", err);
-      setError(err.message || "Failed to download image.");
+      setError(err?.userMessage || "Failed to download the image. Please try again.");
     }
   };
 
@@ -129,7 +129,7 @@ export default function Gallery() {
       }
     } catch (err) {
       console.error("Image delete error:", err);
-      setError(err?.message || "Failed to delete image.");
+      setError(err?.userMessage || "Failed to delete the image. Please try again.");
       // revert
       setUserImages(prevImages);
       setTotal(prevTotal);

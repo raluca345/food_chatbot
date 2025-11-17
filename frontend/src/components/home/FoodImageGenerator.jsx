@@ -32,7 +32,7 @@ function FoodImageGenerator() {
       setImageUrls([url]);
     } catch (err) {
       console.error("Error generating image: ", err);
-      setError("You can only generate pictures of food!");
+      setError(err?.userMessage || "You can only generate pictures of food!");
     } finally {
       setLoading(false);
     }

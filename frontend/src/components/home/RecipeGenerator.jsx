@@ -31,7 +31,7 @@ function RecipeGenerator() {
       setRecipe(recipeTxt);
     } catch (err) {
       console.error("Error generating recipe:", err);
-      setRecipe("Error generating recipe");
+      setRecipe(err?.userMessage || err?.message || "Error generating recipe");
     } finally {
       setLoading(false);
     }

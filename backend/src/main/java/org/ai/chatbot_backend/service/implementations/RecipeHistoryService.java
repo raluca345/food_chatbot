@@ -6,7 +6,6 @@ import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.dto.RecipeHistoryDto;
 import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
-import org.ai.chatbot_backend.exception.WrongOwnerException;
 import org.ai.chatbot_backend.model.RecipeHistory;
 import org.ai.chatbot_backend.model.RecipeFile;
 import org.ai.chatbot_backend.model.User;
@@ -16,6 +15,7 @@ import org.ai.chatbot_backend.repository.RecipeFileRepository;
 import org.ai.chatbot_backend.service.interfaces.IRecipeHistoryService;
 import org.ai.chatbot_backend.service.interfaces.IRecipeFileService;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.Optional;
@@ -64,7 +64,7 @@ public class RecipeHistoryService implements IRecipeHistoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("History entry not found"));
 
         if (entry.getUser() == null || entry.getUser().getId() != userId) {
-            throw new WrongOwnerException("You don't have permission to delete this entry");
+            throw new AccessDeniedException("You don't have permission to delete this entry");
         }
 
         RecipeFile recipeFile = entry.getRecipeFile();

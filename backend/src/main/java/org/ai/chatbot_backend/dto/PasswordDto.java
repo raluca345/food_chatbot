@@ -1,24 +1,19 @@
-package org.ai.chatbot_backend.auth;
+package org.ai.chatbot_backend.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
-@Builder
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
-public class RegisterRequest {
+@AllArgsConstructor
+public class PasswordDto {
 
-    @NotBlank
-    private String username;
-    @NotBlank
-    @Email
-    private String email;
+    private String token;
     @NotBlank
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;

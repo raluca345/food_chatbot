@@ -24,7 +24,7 @@ public class RecipeService implements IRecipeService {
     private final RecipeFileService recipeFileService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${app.backendBaseUrl:http://localhost:8080}")
+    @Value("${app.backend-base-url}")
     private String backendBaseUrl;
 
     private static final Pattern RECIPE_PATTERN = Pattern.compile(

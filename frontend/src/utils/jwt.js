@@ -36,3 +36,9 @@ export function getNameFromToken(token) {
   if (!payload) return null;
   return payload.name || payload.preferred_username || payload.username || null;
 }
+
+export function getIdFromToken(token) {
+  const payload = decodeJwt(token);
+  if (!payload) return null;
+  return payload.id || payload.userId || payload.user_id || null;
+}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AuthPage.css";
 import PasswordInput from "../commons/PasswordInput";
@@ -16,6 +16,12 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  useEffect(() => {
+    if (formData.password && formData.password.length >= 8 && attemptedSubmit) {
+      setAttemptedSubmit(false);
+    }
+  }, [formData.password, attemptedSubmit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,6 +31,12 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
+    setAttemptedSubmit(true);
+
+    if (!formData.password || formData.password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
+      return;
+    }
 
     try {
       const data = await loginUser(formData);
@@ -32,7 +44,10 @@ export default function LoginPage() {
       navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
-      setErrorMessage(err.message || "Login failed");
+      setErrorMessage(
+        err?.userMessage ||
+          "Login failed. Please check your credentials and try again."
+      );
     }
   };
 
@@ -55,7 +70,12 @@ export default function LoginPage() {
           </div>
           <div className="user-form-row">
             <label>Password:</label>
-            <PasswordInput value={formData.password} onChange={handleChange} />
+            <PasswordInput
+              value={formData.password}
+              onChange={handleChange}
+              minLength={8}
+              showValidation={attemptedSubmit}
+            />
           </div>
           <p className="reset-password-link">
             <a

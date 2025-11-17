@@ -6,7 +6,6 @@ import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.service.implementations.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -17,7 +16,6 @@ import java.util.Map;
 public class AuthService {
 
     private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
@@ -32,7 +30,7 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest request) {
-        String email = request.getEmail() == null ? null : request.getEmail().trim().toLowerCase();
+        String email = request.getEmail();
         String password = request.getPassword();
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
