@@ -2,14 +2,12 @@ package org.ai.chatbot_backend.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
-import org.ai.chatbot_backend.dto.RecipeHistoryDto;
 import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.RecipeHistory;
 import org.ai.chatbot_backend.model.RecipeFile;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.service.interfaces.IRecipeHistoryService;
-import org.ai.chatbot_backend.service.implementations.UserService;
 import org.ai.chatbot_backend.service.implementations.RecipeFileService;
 import org.ai.chatbot_backend.security.AuthHelper;
 import org.springframework.core.io.Resource;
@@ -26,16 +24,15 @@ import org.springframework.web.bind.annotation.*;
 public class RecipeHistoryController {
 
     private final IRecipeHistoryService recipeHistoryService;
-    private final UserService userService;
     private final RecipeFileService recipeFileService;
     private final AuthHelper authHelper;
 
     @PostMapping
-    public ResponseEntity<RecipeHistoryDto> saveHistory(@RequestBody SaveRecipeInHistoryRequest request,
+    public ResponseEntity<?> saveHistory(@RequestBody SaveRecipeInHistoryRequest request,
                                                      Authentication authentication) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
         RecipeHistory recipeHistory = recipeHistoryService.save(user.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(recipeHistory.toDto());
@@ -47,7 +44,7 @@ public class RecipeHistoryController {
             @RequestParam(defaultValue = "10") int pageSize) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
@@ -56,37 +53,37 @@ public class RecipeHistoryController {
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<Void> deleteHistoryEntry(@PathVariable("id") long id,
+    public ResponseEntity<?> deleteHistoryEntry(@PathVariable("id") long id,
                                                             Authentication authentication) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
         try {
             recipeHistoryService.deleteFromHistory(user.getId(), id);
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("{id}/download")
-    public ResponseEntity<Resource> downloadHistoryRecipe(@PathVariable("id") Long id,
+    public ResponseEntity<?> downloadHistoryRecipe(@PathVariable("id") Long id,
                                                           Authentication authentication) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
         RecipeHistory entry = recipeHistoryService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("History entry not found"));
         if (entry.getUser() == null || entry.getUser().getId() != user.getId()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Forbidden");
         }
         RecipeFile file = entry.getRecipeFile();
         if (file == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Recipe file not found");
         }
         Long fileId = file.getId();
         Resource resource = recipeFileService.getRecipeFile(fileId);

@@ -19,7 +19,5 @@ public interface IUserService {
 
     PasswordResetToken generatePasswordResetTokenForUser(User user);
 
-    boolean validatePasswordResetTokenOrThrow(String token);
-
     void changeUserPassword(User user, String password);
 }

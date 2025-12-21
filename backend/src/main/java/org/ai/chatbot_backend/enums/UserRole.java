@@ -1,6 +1,6 @@
 package org.ai.chatbot_backend.enums;
 
-public enum Role {
+public enum UserRole {
     ADMIN,
     USER
 }

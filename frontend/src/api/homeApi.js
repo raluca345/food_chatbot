@@ -110,18 +110,112 @@ async function _handleErrorResponse(res, fallbackMessage) {
   return Promise.reject(err);
 }
 
-export async function generateMessage(prompt) {
-  const url = `${API_BASE}/api/v1/messages?prompt=${encodeURIComponent(
-    prompt
-  )}`;
-  const res = await fetch(url, {
+export async function startConversation(message) {
+  const res = await fetch(`${API_BASE}/api/v1/chat`, {
     method: "POST",
-    headers: { ..._getAuthHeader(), "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ..._getAuthHeader(),
+    },
+    body: JSON.stringify({ message }),
   });
+
   if (!res.ok) {
-    return _handleErrorResponse(res, "Failed to generate message");
+    return _handleErrorResponse(res, "Failed to start conversation");
   }
-  return res.text();
+
+  // { conversationId, assistantMessage }
+  return res.json();
+}
+
+export async function sendMessageToConversation(conversationId, message) {
+  const res = await fetch(
+    `${API_BASE}/api/v1/chat/${conversationId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ..._getAuthHeader(),
+      },
+      body: JSON.stringify({ message }),
+    }
+  );
+
+  if (!res.ok) {
+    return _handleErrorResponse(res, "Failed to send message");
+  }
+
+  // { conversationId, assistantMessage }
+  return res.json();
+}
+
+export async function loadConversation(conversationId) {
+  const res = await fetch(`${API_BASE}/api/v1/chat/${conversationId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ..._getAuthHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to load conversation");
+  }
+
+  return res.json(); // {conversationId, {id, role, content, timestamp} }
+}
+
+export async function renameConversation(conversationId, title) {
+  const safeTitle = String(title || "").trim();
+  const res = await fetch(`${API_BASE}/api/v1/chat/${conversationId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ..._getAuthHeader(),
+    },
+    body: JSON.stringify({ title: safeTitle }),
+  });
+
+  if (!res.ok)
+    return _handleErrorResponse(res, "Failed to rename conversation");
+
+  if (res.status === 200) return true;
+  return res.json();
+}
+
+export async function loadConversations() {
+  const res = await fetch(`${API_BASE}/api/v1/chat`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ..._getAuthHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to load conversations");
+  }
+
+  return res.json(); // [ {conversationId, title, {id, role, content, timestamp} ... ]
+}
+
+export async function deleteConversation(conversationId) {
+  const res = await fetch(`${API_BASE}/api/v1/chat/${conversationId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ..._getAuthHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Failed to load conversations");
+  }
+
+  return true;
 }
 
 export async function generateImage(params) {
@@ -283,7 +377,7 @@ export async function sendPasswordResetEmail(userEmail, msgBody, subject) {
   };
   const res = await fetch(url, {
     method: "POST",
-    headers: { ..._getAuthHeader(), "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) return _handleErrorResponse(res, "Failed to send email");
@@ -298,7 +392,7 @@ export async function changePassword(token, newPassword) {
   };
   const res = await fetch(url, {
     method: "POST",
-    headers: { ..._getAuthHeader(), "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) return _handleErrorResponse(res, "Failed to change password");

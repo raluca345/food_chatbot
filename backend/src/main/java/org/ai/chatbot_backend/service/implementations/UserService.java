@@ -6,8 +6,7 @@ import org.ai.chatbot_backend.dto.UserDto;
 import org.ai.chatbot_backend.exception.DuplicateEmailException;
 import org.ai.chatbot_backend.exception.InvalidUserDataException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
-import org.ai.chatbot_backend.enums.Role;
-import org.ai.chatbot_backend.exception.PasswordResetTokenExpiredException;
+import org.ai.chatbot_backend.enums.UserRole;
 import org.ai.chatbot_backend.model.PasswordResetToken;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.UserRepository;
@@ -78,7 +77,7 @@ public class UserService implements IUserService {
                 .name(trimmedName)
                 .email(trimmedEmail)
                 .password(encoded)
-                .role(Role.USER)
+                .role(UserRole.USER)
                 .build();
         User saved = userRepository.save(user);
         log.debug("Registered user id={} email={}", saved.getId(), saved.getEmail());
@@ -97,25 +96,17 @@ public class UserService implements IUserService {
         return passwordResetTokenService.saveToken(user, token);
     }
 
-    public boolean validatePasswordResetTokenOrThrow(String token) {
-        PasswordResetToken prt = passwordResetTokenService.findByToken(token);
-        if (prt == null) {
-            throw new ResourceNotFoundException("Token not found");
-        }
-        if (prt.getExpiryDate() == null || prt.getExpiryDate().before(new java.util.Date())) {
-            throw new PasswordResetTokenExpiredException("Token expired");
-        }
-        return true;
-    }
-
     @Override
     public void changeUserPassword(User user, String password) {
         if (password == null) {
             throw new ResourceNotFoundException("Missing required fields");
         }
+
+        if (passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("New password cannot be the same as the old password.");
+        }
+
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
     }
-
-
 }

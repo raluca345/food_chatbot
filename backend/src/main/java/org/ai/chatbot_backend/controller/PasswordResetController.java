@@ -10,6 +10,7 @@ import org.ai.chatbot_backend.model.PasswordResetToken;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.service.implementations.PasswordResetWorkflowService;
 import org.ai.chatbot_backend.service.implementations.UserService;
+import org.ai.chatbot_backend.service.implementations.PasswordResetTokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,29 +29,29 @@ public class PasswordResetController {
     private final EmailService emailService;
     private final UserService userService;
     private final PasswordResetWorkflowService passwordResetWorkflowService;
+    private final PasswordResetTokenService passwordResetTokenService;
 
     @PostMapping("/auth/password-reset/request")
-    public ResponseEntity<Void> sendPasswordResetEmail(@RequestBody EmailDetails emailDetails) {
+    public ResponseEntity<?> sendPasswordResetEmail(@RequestBody EmailDetails emailDetails) {
         try {
             User user = userService.findUserByEmail(emailDetails.getRecipient());
             if (user != null) {
                 PasswordResetToken prt = userService.generatePasswordResetTokenForUser(user);
                 emailService.sendPasswordResetEmail(emailDetails, prt);
             }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+        } catch (Exception ignored) {
         }
         return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/auth/password-reset/verify")
-    public ResponseEntity<Void> redirectToPasswordResetPage(@RequestParam String token) {
+    public ResponseEntity<?> redirectToPasswordResetPage(@RequestParam String token) {
         try {
-            userService.validatePasswordResetTokenOrThrow(token);
+            passwordResetTokenService.validatePasswordResetTokenOrThrow(token);
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (PasswordResetTokenExpiredException e) {
-            return ResponseEntity.status(HttpStatus.GONE).build();
+            return ResponseEntity.status(HttpStatus.GONE).body(e.getMessage());
         }
 
         String frontendUrl = FRONTEND_BASE_URL + "/reset-password?token=" + token;
@@ -60,15 +61,16 @@ public class PasswordResetController {
     }
 
     @PostMapping("/auth/password-reset/confirm")
-    public ResponseEntity<Void> changePassword(@RequestBody PasswordDto newPassword) {
+    public ResponseEntity<?> changePassword(@RequestBody PasswordDto newPassword) {
         try {
-            // Single atomic operation inside a transaction
             passwordResetWorkflowService.resetPassword(newPassword.getToken(), newPassword.getPassword());
             return ResponseEntity.noContent().build();
         } catch (PasswordResetTokenExpiredException e) {
-            return ResponseEntity.status(HttpStatus.GONE).build();
+            return ResponseEntity.status(HttpStatus.GONE).body(e.getMessage());
         }  catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 }

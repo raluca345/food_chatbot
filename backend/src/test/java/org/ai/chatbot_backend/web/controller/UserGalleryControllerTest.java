@@ -2,7 +2,7 @@ package org.ai.chatbot_backend.web.controller;
 
 import org.ai.chatbot_backend.config.JwtService;
 import org.ai.chatbot_backend.controller.UserGalleryController;
-import org.ai.chatbot_backend.enums.Role;
+import org.ai.chatbot_backend.enums.UserRole;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.service.implementations.ImageService;
 import org.junit.jupiter.api.Test;
@@ -36,19 +36,19 @@ class UserGalleryControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
-    private User buildUser() {
+    private User mockUser() {
         return User.builder()
                 .id(1L)
                 .name("test")
                 .email("test@example.com")
                 .password("pw")
-                .role(Role.USER)
+                .role(UserRole.USER)
                 .build();
     }
 
     @Test
     void deleteImage_success_returnsNoContent() throws Exception {
-        User user = buildUser();
+        User user = mockUser();
 
         doNothing().when(imageService).deleteByIdForUser(123L, user);
 
@@ -60,7 +60,7 @@ class UserGalleryControllerTest {
 
     @Test
     void deleteImage_forbidden_returnsForbidden() throws Exception {
-        User user = buildUser();
+        User user = mockUser();
 
         doThrow(new AccessDeniedException("Forbidden"))
                 .when(imageService).deleteByIdForUser(123L, user);

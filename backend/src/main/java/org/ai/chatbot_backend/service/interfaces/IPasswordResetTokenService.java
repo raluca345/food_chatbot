@@ -12,4 +12,6 @@ public interface IPasswordResetTokenService {
     long findUserIdByTokenOrThrow(String token);
 
     void deleteByToken(String token);
+
+    boolean validatePasswordResetTokenOrThrow(String token);
 }

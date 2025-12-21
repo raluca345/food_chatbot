@@ -59,6 +59,11 @@
   white-space: nowrap;
 }
 
+.sidebar-group > span .sidebar-icon:hover,
+.sidebar-group > span .sidebar-label:hover {
+  color: var(--accent);
+}
+
 .sidebar-group .sidebar-label {
   font-size: 15px;
   font-weight: 600;

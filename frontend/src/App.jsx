@@ -14,24 +14,6 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const getActiveTab = () => {
-    if (location.pathname === "/sign-up") return "sign-up";
-
-    if (
-      location.pathname === "/" ||
-      location.pathname === "/home" ||
-      location.pathname === "/home/food-chat"
-    )
-      return "food-chat";
-
-    if (location.pathname === "/home/image-generator") return "image-generator";
-
-    if (location.pathname === "/home/recipe-generator")
-      return "recipe-generator";
-
-    return null;
-  };
-
   const [isSideBarOpen, setIsSideBarOpen] = useState(false);
 
   const toggleSidebar = () => setIsSideBarOpen((s) => !s);
@@ -42,7 +24,6 @@ function App() {
     window.location.reload();
   };
 
-  const activeTab = getActiveTab();
   const isSignUpPage = location.pathname === "/sign-up";
   const isLoginPage = location.pathname === "/login";
   const isForgotPage = location.pathname === "/forgot";
@@ -54,9 +35,13 @@ function App() {
   return (
     <div className="App">
       <article>
-        {!isForgotPage && !isLoginPage && !isSignUpPage && !isResetPage && isLoggedIn && (
-          <Sidebar isOpen={isSideBarOpen} onToggle={toggleSidebar} />
-        )}
+        {!isForgotPage &&
+          !isLoginPage &&
+          !isSignUpPage &&
+          !isResetPage &&
+          isLoggedIn && (
+            <Sidebar isOpen={isSideBarOpen} onToggle={toggleSidebar} />
+          )}
         <section>
           {!isSignUpPage && !isLoginPage && !isForgotPage && !isResetPage && (
             <header className="app-header">

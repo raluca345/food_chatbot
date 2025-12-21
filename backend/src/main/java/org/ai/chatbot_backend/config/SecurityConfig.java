@@ -39,7 +39,7 @@ public class SecurityConfig {
                         ).anonymous()
                         .requestMatchers("/api/v1/auth/register").permitAll()
                         .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/messages/**").permitAll()
+                        .requestMatchers("/api/v1/chat/**").authenticated()
                         .requestMatchers("/api/v1/recipes/download/**").permitAll()
                         .requestMatchers("/api/v1/food-images/**").permitAll()
                         .requestMatchers("/api/v1/users/me/**").authenticated()
@@ -67,7 +67,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

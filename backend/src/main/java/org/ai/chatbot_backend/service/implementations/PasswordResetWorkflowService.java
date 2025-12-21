@@ -14,7 +14,7 @@ public class PasswordResetWorkflowService {
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        userService.validatePasswordResetTokenOrThrow(token);
+        passwordResetTokenService.validatePasswordResetTokenOrThrow(token);
 
         long userId = passwordResetTokenService.findUserIdByTokenOrThrow(token);
         User user = userService.findById(userId);
@@ -24,4 +24,3 @@ public class PasswordResetWorkflowService {
         passwordResetTokenService.deleteByToken(token);
     }
 }
-

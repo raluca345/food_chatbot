@@ -43,7 +43,7 @@ public class UserGalleryController {
     public ResponseEntity<Resource> downloadImage(Authentication authentication, @PathVariable("imageId") Long imageId) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         try {
             ImageContent content = imageService.loadImageContentForUser(imageId, user);
@@ -53,29 +53,29 @@ public class UserGalleryController {
                     .contentType(mediaType)
                     .body(content.resource());
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         } catch (RuntimeException e) {
             log.error("Failed to download image {}", imageId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     @DeleteMapping("/me/images/{imageId}")
-    public ResponseEntity<Void> deleteImage(Authentication authentication,
+    public ResponseEntity<?> deleteImage(Authentication authentication,
             @PathVariable long imageId) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
         try {
             imageService.deleteByIdForUser(imageId, user);
             return ResponseEntity.noContent().build();
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 

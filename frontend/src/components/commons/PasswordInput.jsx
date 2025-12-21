@@ -17,9 +17,11 @@ export default function PasswordInput({
   const [show, setShow] = useState(false);
   const [touched, setTouched] = useState(false);
 
-  const isTooShort = minLength && value && value.length < minLength;
-  const internalInvalid = isTooShort && (touched || showValidation);
-  const hasExternalError = Boolean(externalError && externalError.length > 0);
+  const tooShort = minLength && value && value.length < minLength;
+  const internalInvalid = tooShort && (touched || showValidation);
+
+  const hasExternalError = Boolean(externalError);
+
   const isInvalid = internalInvalid || hasExternalError;
 
   const handleBlur = (e) => {
@@ -28,7 +30,6 @@ export default function PasswordInput({
   };
 
   const handleFocus = (e) => {
-    setTouched(false);
     if (typeof parentOnFocus === "function") parentOnFocus(e);
   };
 
@@ -43,6 +44,7 @@ export default function PasswordInput({
             : `Password must be at least ${minLength} characters long.`}
         </div>
       )}
+
       <div className={`password-field ${isInvalid ? "invalid" : ""}`}>
         <input
           type={show ? "text" : "password"}
@@ -53,8 +55,8 @@ export default function PasswordInput({
           onFocus={handleFocus}
           placeholder={placeholder}
           className="user-form-input"
-          {...(minLength ? { minLength: minLength } : {})}
           aria-invalid={isInvalid}
+          {...(minLength ? { minLength } : {})}
           {...(isInvalid && descId ? { "aria-describedby": descId } : {})}
         />
 

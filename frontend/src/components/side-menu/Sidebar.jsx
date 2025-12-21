@@ -2,6 +2,7 @@ import React from "react";
 import { FaBars, FaImages } from "react-icons/fa";
 import { GiCook } from "react-icons/gi";
 import "./Sidebar.css";
+import ConversationList from "./ConversationList";
 import { useNavigate } from "react-router";
 
 export default function Sidebar({ isOpen, onToggle }) {
@@ -43,6 +44,9 @@ export default function Sidebar({ isOpen, onToggle }) {
             onClick={() => navigate("/me/recipe-history")}
           />
           {renderLabel("Recipe history", () => navigate("/me/recipe-history"))}
+        </span>
+        <span>
+          <ConversationList isOpen={isOpen} onToggle={onToggle} />
         </span>
       </div>
 

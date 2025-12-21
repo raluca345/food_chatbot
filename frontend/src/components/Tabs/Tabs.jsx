@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, matchPath } from "react-router-dom";
 import "./Tabs.css";
 
 export default function Tabs() {
@@ -7,19 +7,20 @@ export default function Tabs() {
   const location = useLocation();
 
   const getActiveTab = () => {
-    if (location.pathname === "/sign-up") return "sign-up";
+    const p = location.pathname;
+    if (p === "/sign-up") return "sign-up";
 
     if (
-      location.pathname === "/" ||
-      location.pathname === "/home" ||
-      location.pathname === "/home/food-chat"
+      p === "/" ||
+      p === "/home" ||
+      p === "/home/chat" ||
+      !!matchPath("/home/chat/:conversationId", p)
     )
       return "food-chat";
 
-    if (location.pathname === "/home/image-generator") return "image-generator";
+    if (p === "/home/image-generator") return "image-generator";
 
-    if (location.pathname === "/home/recipe-generator")
-      return "recipe-generator";
+    if (p === "/home/recipe-generator") return "recipe-generator";
 
     return null;
   };

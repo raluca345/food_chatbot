@@ -1,0 +1,218 @@
+.conversation-list {
+  list-style: none;
+  margin-left: -44px;
+  max-width: 220px;
+  box-sizing: border-box;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.conversation-list li {
+  margin-bottom: 0px;
+}
+
+.conv-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  border: none;
+  padding: 6px 0px;
+  font-size: 16px;
+  line-height: 1.2;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 120ms ease, transform 60ms ease;
+}
+
+.conv-item {
+  display: flex;
+  align-items: center;
+  width: 220px;
+}
+.conv-item {
+  width: auto;
+  padding: 6px 0px;
+  cursor: default;
+  position: relative;
+}
+
+.conv-title {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv-link {
+  display: block;
+  width: 100%;
+  padding: 6px 0px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.conv-link {
+  padding: 6px 14px 6px 8px;
+}
+
+.conv-link:focus {
+  outline: none;
+}
+
+.conv-item:hover,
+.conv-item:focus {
+  background-color: rgba(0, 0, 0, 0.04);
+  outline: none;
+}
+
+.conv-item:active {
+  transform: translateY(0.5px);
+}
+
+.conv-loading {
+  color: var(--muted, #6b6b6b);
+  padding: 12px;
+  font-size: 14px;
+}
+
+.conv-title .menu {
+  text-align: right;
+  visibility: hidden;
+}
+
+.inline-icon.menu {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.inline-icon.menu,
+.conv-ellipsis svg {
+  color: #000;
+}
+
+.conv-item:hover .inline-icon.menu,
+.conv-item.selected .inline-icon.menu {
+  opacity: 1;
+}
+
+.conv-actions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1400;
+}
+
+.conv-ellipsis {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conv-menu {
+  position: absolute;
+  right: 0;
+  top: 28px;
+  background: var(--surface, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  z-index: 1500;
+  min-width: 120px;
+}
+
+.conv-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conv-menu-item.rename {
+  color: #000;
+}
+
+.conv-menu-item.rename:hover {
+  color: var(--accent, #743f10);
+}
+
+.conv-menu-item.delete {
+  color: var(--danger, #e74c3c);
+}
+
+.conv-menu-item.delete:hover {
+  background: rgba(231, 76, 60, 0.06);
+}
+
+.conversation-list {
+  scrollbar-width: none;
+}
+.conversation-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.conversation-list:hover {
+  scrollbar-width: thin;
+}
+.conversation-list:hover::-webkit-scrollbar {
+  width: 10px;
+}
+.conversation-list:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+.conversation-list:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.conversation-list:hover::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.18);
+}
+
+.conv-item.editing {
+  outline: 1px solid var(--accent, #c0702c);
+  border-radius: 4px;
+  padding-right: 44px;
+}
+
+.conv-rename-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  font: inherit;
+  color: inherit;
+  outline: none;
+}
+
+.conv-rename-input:focus {
+  box-shadow: none;
+}
+
+.conv-item.editing .conv-ellipsis {
+  display: none;
+}
+
+.conv-actions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}

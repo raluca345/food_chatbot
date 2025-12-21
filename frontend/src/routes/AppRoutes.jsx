@@ -18,6 +18,7 @@ export default function AppRoutes() {
       <Route path="/home" element={<FoodChat />} />
       <Route path="/home/image-generator" element={<FoodImageGenerator />} />
       <Route path="/home/chat" element={<FoodChat />} />
+      <Route path="/home/chat/:conversationId" element={<FoodChat />} />
       <Route path="/home/recipe-generator" element={<RecipeGenerator />} />
       <Route path="/sign-up" element={<SignUpPage />}></Route>
       <Route path="/login" element={<LoginPage />}></Route>
