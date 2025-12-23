@@ -12,8 +12,6 @@ import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.Conversation;
 import org.ai.chatbot_backend.model.Message;
 import org.ai.chatbot_backend.model.User;
-import org.ai.chatbot_backend.repository.ConversationRepository;
-import org.ai.chatbot_backend.repository.UserRepository;
 import org.ai.chatbot_backend.service.interfaces.IChatService;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
