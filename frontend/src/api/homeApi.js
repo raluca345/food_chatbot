@@ -159,8 +159,7 @@ export async function loadConversation(conversationId) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Failed to load conversation");
+    return _handleErrorResponse(res, "Failed to load conversation");
   }
 
   return res.json(); // {conversationId, {id, role, content, timestamp} }
@@ -194,8 +193,7 @@ export async function loadConversations() {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Failed to load conversations");
+    return _handleErrorResponse(res, "Failed to load conversations");
   }
 
   return res.json(); // [ {conversationId, title, {id, role, content, timestamp} ... ]
@@ -211,8 +209,7 @@ export async function deleteConversation(conversationId) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Failed to load conversations");
+    return _handleErrorResponse(res, "Failed to delete conversation");
   }
 
   return true;

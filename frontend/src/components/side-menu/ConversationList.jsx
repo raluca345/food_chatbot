@@ -8,20 +8,26 @@ import {
 } from "../../api/homeApi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaEllipsis } from "react-icons/fa6";
+import ContextMenu from "../context-menu/ContextMenu";
 
 export default function ConversationList({ isOpen }) {
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [savingId, setSavingId] = useState(null);
-  const navigate = useNavigate();
-  const location = useLocation();
+
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuAnchor, setMenuAnchor] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [originalTitle, setOriginalTitle] = useState("");
+
   const inputRef = useRef(null);
   const mountedRef = useRef(true);
-  const rootRef = useRef(null);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const fetchConversations = async () => {
     setIsLoading(true);
     try {
@@ -45,8 +51,15 @@ export default function ConversationList({ isOpen }) {
 
   useEffect(() => {
     if (editingId && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+      const el = inputRef.current;
+      el.focus();
+
+      const range = document.createRange();
+      range.selectNodeContents(el);
+
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
   }, [editingId]);
 
@@ -57,17 +70,7 @@ export default function ConversationList({ isOpen }) {
     setOpenMenuId(null);
     setEditingId(id);
     setEditingTitle(currentTitle ?? "");
-    // ensure input gets focus even if DOM updates are batched
-    setTimeout(() => {
-      try {
-        if (inputRef.current) {
-          inputRef.current.focus();
-          inputRef.current.select();
-        }
-      } catch (err) {
-        /* no-op */
-      }
-    }, 40);
+    setOriginalTitle(currentTitle ?? "");
   };
 
   const cancelRename = () => {
@@ -76,13 +79,12 @@ export default function ConversationList({ isOpen }) {
   };
 
   const saveRename = async (id) => {
-    const newTitle = String(editingTitle || "").trim();
-    if (!newTitle) {
-      return;
-    }
+    const newTitle = editingTitle.trim();
+    if (!newTitle) return;
+
     setSavingId(id);
     try {
-      const res = await renameConversation(id, newTitle);
+      await renameConversation(id, newTitle);
       setConversations((prev) =>
         prev.map((c) =>
           String(c.conversationId) === String(id)
@@ -90,10 +92,10 @@ export default function ConversationList({ isOpen }) {
             : c
         )
       );
-      // refresh full list from server to pick up any ordering or metadata changes
-      fetchConversations();
     } catch (e) {
-      console.error("Rename failed", e);
+      setEditingTitle(originalTitle);
+      cancelRename();
+      console.error(e.userMessage);
     } finally {
       setSavingId(null);
       cancelRename();
@@ -101,55 +103,32 @@ export default function ConversationList({ isOpen }) {
   };
 
   const handleDelete = async (conversationId) => {
-    if (!conversationId) return;
     setSavingId(conversationId);
     try {
       await deleteConversation(conversationId);
-      // refresh from server to ensure list consistency after delete
       await fetchConversations();
       if (String(selectedId) === String(conversationId)) {
-        navigate(`/home/chat`);
+        navigate("/home/chat");
       }
     } catch (e) {
-      console.error("Failed to delete conversation.", e);
+      console.error("Delete failed", e);
     } finally {
       setSavingId(null);
       setOpenMenuId(null);
     }
   };
 
-  useEffect(() => {
-    if (!selectedId) return;
-    const found = conversations.some(
-      (c) => String(c.conversationId) === String(selectedId)
-    );
-    if (!found) {
-      fetchConversations();
-    }
-  }, [selectedId, conversations]);
-
-  useEffect(() => {
-    function handleDocPointer(e) {
-      if (!openMenuId) return;
-      if (rootRef.current && !rootRef.current.contains(e.target)) {
-        setOpenMenuId(null);
-      }
-    }
-
-    document.addEventListener("pointerdown", handleDocPointer);
-    return () => document.removeEventListener("pointerdown", handleDocPointer);
-  }, [openMenuId]);
-
   return (
     <>
-      <div ref={rootRef}>
       {isLoading && <Spinner />}
+
       {isOpen && (
         <ul className="conversation-list">
           {conversations.map((c) => {
             const id = c.conversationId;
             const isSelected = String(id) === String(selectedId);
             const isEditing = String(editingId) === String(id);
+
             return (
               <li key={id}>
                 <div
@@ -159,89 +138,79 @@ export default function ConversationList({ isOpen }) {
                     isEditing ? "editing" : "",
                   ].join(" ")}
                 >
-                  {isEditing ? (
-                    <input
-                      ref={inputRef}
-                      className="conv-rename-input"
-                      value={editingTitle}
-                      onChange={(e) => setEditingTitle(e.target.value)}
+                  <button
+                    className="conv-link"
+                    onClick={() => !isEditing && navigate(`/home/chat/${id}`)}
+                  >
+                    <span
+                      ref={isEditing ? inputRef : null}
+                      className="conv-title"
+                      contentEditable={isEditing}
+                      suppressContentEditableWarning
+                      spellCheck={false}
+                      onInput={(e) =>
+                        setEditingTitle(e.currentTarget.textContent)
+                      }
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
                           saveRename(id);
-                        } else if (e.key === "Escape") {
+                        }
+                        if (e.key === "Escape") {
+                          e.preventDefault();
                           cancelRename();
                         }
                       }}
-                      aria-label="Edit conversation title"
-                      disabled={savingId === id}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      className="conv-link"
-                      onClick={() => navigate(`/home/chat/${id}`)}
-                      title={c.title}
+                      onBlur={() => isEditing && saveRename(id)}
                     >
-                      <span className="conv-title" title={c.title}>
-                        {c.title}
-                      </span>
+                      {isEditing ? editingTitle : c.title}
+                    </span>
+                  </button>
+
+                  {!isEditing && (
+                    <button
+                      className="conv-ellipsis"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuAnchor(e.currentTarget.getBoundingClientRect());
+                        setOpenMenuId(openMenuId === id ? null : id);
+                      }}
+                    >
+                      <FaEllipsis className="inline-icon menu" />
                     </button>
                   )}
-
-                  <div className="conv-actions">
-                    {!isEditing && (
-                      <button
-                        className="conv-ellipsis"
-                        aria-haspopup="true"
-                        aria-expanded={openMenuId === id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(openMenuId === id ? null : id);
-                        }}
-                        title="Options"
-                      >
-                        <FaEllipsis className="inline-icon menu" />
-                      </button>
-                    )}
-
-                    {openMenuId === id && !isEditing && (
-                      <div
-                        className="conv-menu"
-                        role="menu"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          className="conv-menu-item rename"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startRename(id, c.title);
-                          }}
-                        >
-                          Rename
-                        </button>
-                        <button
-                          className="conv-menu-item delete"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(id);
-                          }}
-                          disabled={savingId === id}
-                        >
-                          {savingId === id ? "Deleting…" : "Delete"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </li>
             );
           })}
         </ul>
       )}
-      </div>
+
+      <ContextMenu
+        open={!!openMenuId}
+        anchorRect={menuAnchor}
+        onClose={() => setOpenMenuId(null)}
+      >
+        <button
+          className="context-menu-item rename"
+          onClick={() => {
+            const convo = conversations.find(
+              (c) => String(c.conversationId) === String(openMenuId)
+            );
+            if (convo) startRename(openMenuId, convo.title);
+          }}
+        >
+          Rename
+        </button>
+
+        <button
+          className="context-menu-item delete"
+          onClick={() => handleDelete(openMenuId)}
+          disabled={savingId === openMenuId}
+        >
+          {savingId === openMenuId ? "Deleting…" : "Delete"}
+        </button>
+      </ContextMenu>
     </>
   );
 }

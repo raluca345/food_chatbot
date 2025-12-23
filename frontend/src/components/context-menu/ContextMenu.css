@@ -1,0 +1,41 @@
+.context-menu {
+  position: fixed;
+  background: var(--surface, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  z-index: 9999;
+  padding: 4px 0;
+}
+
+.context-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.context-menu-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.context-menu-item.rename {
+  color: #000;
+}
+
+.context-menu-item.rename:hover {
+  color: var(--accent, #743f10);
+}
+
+.context-menu-item.delete {
+  color: var(--danger, #e74c3c);
+}
+
+.context-menu-item.delete:hover {
+  background: rgba(231, 76, 60, 0.08);
+}

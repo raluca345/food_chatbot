@@ -7,6 +7,7 @@ import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.dto.UpdateTitleRequest;
+import org.ai.chatbot_backend.exception.EmptyTitleException;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.User;
@@ -146,6 +147,8 @@ public class GenAIController {
 
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (EmptyTitleException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 

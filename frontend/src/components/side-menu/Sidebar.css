@@ -90,7 +90,7 @@
 .sidebar-divider {
   position: fixed;
   top: 18px;
-  left: calc(22px + 40px + 140px);
+  left: calc(22px + 40px + 160px);
   width: 1px;
   height: 0;
   background: rgba(107, 107, 107, 0.14);
@@ -120,6 +120,6 @@
     transform: translateX(80px);
   }
   .sidebar-divider {
-    left: calc(18px + 40px + 80px);
+    left: calc(18px + 40px + 100px);
   }
 }

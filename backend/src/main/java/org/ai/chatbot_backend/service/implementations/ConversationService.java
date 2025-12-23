@@ -3,6 +3,7 @@ package org.ai.chatbot_backend.service.implementations;
 import com.azure.core.exception.HttpResponseException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.ai.chatbot_backend.exception.EmptyTitleException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.Conversation;
 import org.ai.chatbot_backend.model.User;
@@ -53,6 +54,11 @@ public class ConversationService implements IConversationService {
     @Override
     @Transactional
     public Conversation updateTitle(User user, long id, String title) {
+
+        if (title.isBlank()) {
+            throw new EmptyTitleException("Title can't be blank");
+        }
+
         Conversation conversation = conversationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
