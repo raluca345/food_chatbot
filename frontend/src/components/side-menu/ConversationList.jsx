@@ -80,7 +80,10 @@ export default function ConversationList({ isOpen }) {
 
   const saveRename = async (id) => {
     const newTitle = editingTitle.trim();
-    if (!newTitle) return;
+    if (!newTitle) {
+      cancelRename();
+      return;
+    }
 
     setSavingId(id);
     try {
