@@ -52,6 +52,7 @@ function FoodImageGenerator() {
               type="text"
               value={params.name}
               onChange={handleChange}
+              placeholder="Ex: pepperoni pizza"
             />
           </div>
           <div className="form-row">
@@ -76,6 +77,7 @@ function FoodImageGenerator() {
               type="text"
               value={params.course}
               onChange={handleChange}
+              placeholder="Ex: appetizer, main or dessert"
             />
           </div>
           <div className="form-row">
@@ -85,6 +87,7 @@ function FoodImageGenerator() {
               type="text"
               value={params.ingredients}
               onChange={handleChange}
+              placeholder="Ex: cheese, tomato, ham"
             />
           </div>
           <div className="form-row">
@@ -94,6 +97,7 @@ function FoodImageGenerator() {
               type="text"
               value={params.dishType}
               onChange={handleChange}
+              placeholder="Ex: flatbread, pie"
             />
           </div>
 

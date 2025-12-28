@@ -1,0 +1,7 @@
+cloudflare:
+  r2:
+    account-id:
+    access-key:
+    secret-key:
+    bucket:
+    public-domain:

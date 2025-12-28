@@ -13,7 +13,7 @@ export default function ContextMenu({
   useEffect(() => {
     if (!open) return;
 
-    function handlePointerDown(e) {
+    function handlePointerDown() {
       onClose?.();
     }
 
