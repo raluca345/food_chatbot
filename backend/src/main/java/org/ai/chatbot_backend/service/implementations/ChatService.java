@@ -226,6 +226,7 @@ public class ChatService implements IChatService {
 
         String assistantReply = getResponse(userMessage);
 
+        messageService.createUserMessage(userMessage, conversation);
         messageService.createAssistantMessage(assistantReply, conversation);
 
         return new AssistantMessageDto(

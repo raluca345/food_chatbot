@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ai.chatbot_backend.config.JwtService;
 import org.ai.chatbot_backend.controller.GenAIController;
 import org.ai.chatbot_backend.dto.AssistantMessageDto;
+import org.ai.chatbot_backend.dto.ChatMessageRequest;
 import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
@@ -165,7 +166,9 @@ class GenAIControllerWebMvcTest {
         when(chatService.createAndSaveConversation(any(User.class), anyString()))
                 .thenReturn(new AssistantMessageDto(1L, "hi"));
 
-        String promptJson = mapper.writeValueAsString("hello");
+        ChatMessageRequest req = new ChatMessageRequest();
+        req.setMessage("hello");
+        String promptJson = mapper.writeValueAsString(req);
 
         mockMvc.perform(post("/api/v1/chat")
             .with(csrf())
@@ -180,7 +183,9 @@ class GenAIControllerWebMvcTest {
         when(chatService.createGuestConversation(anyString()))
                 .thenReturn(new AssistantMessageDto(null, "hi guest"));
 
-        String promptJson = mapper.writeValueAsString("hello");
+        ChatMessageRequest req = new ChatMessageRequest();
+        req.setMessage("hello");
+        String promptJson = mapper.writeValueAsString(req);
 
         mockMvc.perform(post("/api/v1/chat/guest")
                         .with(csrf())
@@ -194,7 +199,9 @@ class GenAIControllerWebMvcTest {
     void createConversation_Unauthenticated_returns401() throws Exception {
         when(authHelper.getAuthenticatedUserOrNull(any(Authentication.class))).thenReturn(null);
 
-        String promptJson = mapper.writeValueAsString("hello");
+        ChatMessageRequest req = new ChatMessageRequest();
+        req.setMessage("hello");
+        String promptJson = mapper.writeValueAsString(req);
 
         mockMvc.perform(post("/api/v1/chat")
                         .with(csrf())
@@ -211,7 +218,9 @@ class GenAIControllerWebMvcTest {
         when(chatService.chat(any(User.class), anyString(), anyLong()))
                 .thenReturn(new AssistantMessageDto(1L, "hello"));
 
-        String promptJson = mapper.writeValueAsString("how are you");
+        ChatMessageRequest req = new ChatMessageRequest();
+        req.setMessage("how are you");
+        String promptJson = mapper.writeValueAsString(req);
 
         mockMvc.perform(post("/api/v1/chat/1/messages")
                         .with(csrf())
@@ -225,7 +234,9 @@ class GenAIControllerWebMvcTest {
     void continueConversation_WrongUser_returnsUnauthorized() throws Exception {
         when(authHelper.getAuthenticatedUserOrNull(any(Authentication.class))).thenReturn(null);
 
-        String promptJson = mapper.writeValueAsString("how are you");
+        ChatMessageRequest req = new ChatMessageRequest();
+        req.setMessage("how are you");
+        String promptJson = mapper.writeValueAsString(req);
 
         mockMvc.perform(post("/api/v1/chat/1/messages")
                         .with(csrf())
@@ -242,7 +253,9 @@ class GenAIControllerWebMvcTest {
         when(chatService.chat(any(User.class), anyString(), anyLong()))
                 .thenThrow(new ResourceNotFoundException("no convo with that id"));
 
-        String promptJson = mapper.writeValueAsString("how are you");
+        ChatMessageRequest req = new ChatMessageRequest();
+        req.setMessage("how are you");
+        String promptJson = mapper.writeValueAsString(req);
 
         mockMvc.perform(post("/api/v1/chat/1/messages")
                         .with(csrf())
@@ -259,7 +272,9 @@ class GenAIControllerWebMvcTest {
         when(chatService.chat(any(User.class), anyString(), anyLong()))
                 .thenThrow(new AccessDeniedException("forbidden"));
 
-        String promptJson = mapper.writeValueAsString("how are you");
+        ChatMessageRequest req = new ChatMessageRequest();
+        req.setMessage("how are you");
+        String promptJson = mapper.writeValueAsString(req);
 
         mockMvc.perform(post("/api/v1/chat/1/messages")
                         .with(csrf())

@@ -3,6 +3,7 @@ package org.ai.chatbot_backend.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.AssistantMessageDto;
+import org.ai.chatbot_backend.dto.ChatMessageRequest;
 import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
@@ -39,7 +40,7 @@ public class GenAIController {
 
     @PostMapping("/chat")
     public ResponseEntity<AssistantMessageDto> startConversation(
-            @RequestBody String message,
+            @RequestBody ChatMessageRequest request,
             Authentication authentication
     ) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
@@ -48,7 +49,7 @@ public class GenAIController {
         }
 
         try {
-            AssistantMessageDto response = chatService.createAndSaveConversation(user, message);
+            AssistantMessageDto response = chatService.createAndSaveConversation(user, request.getMessage());
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -57,10 +58,10 @@ public class GenAIController {
 
     @PostMapping("/chat/guest")
     public ResponseEntity<AssistantMessageDto> startGuestConversation(
-            @RequestBody String message
+            @RequestBody ChatMessageRequest request
     ) {
         try {
-            AssistantMessageDto response = chatService.createGuestConversation(message);
+            AssistantMessageDto response = chatService.createGuestConversation(request.getMessage());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -70,7 +71,7 @@ public class GenAIController {
     @PostMapping("/chat/{conversationId}/messages")
     public ResponseEntity<AssistantMessageDto> continueConversation(
             @PathVariable long conversationId,
-            @RequestBody String message,
+            @RequestBody ChatMessageRequest request,
             Authentication authentication
     ) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
@@ -79,7 +80,7 @@ public class GenAIController {
         }
 
         try {
-            AssistantMessageDto response = chatService.chat(user, message, conversationId);
+            AssistantMessageDto response = chatService.chat(user, request.getMessage(), conversationId);
             return ResponseEntity.ok(response);
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
