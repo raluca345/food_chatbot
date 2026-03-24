@@ -65,21 +65,19 @@ public class GenAIController {
             @RequestBody String message,
             Authentication authentication
     ) {
+        User user = authHelper.getAuthenticatedUserOrNull(authentication);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         try {
-
-            User user = authHelper.getAuthenticatedUserOrNull(authentication);
-
-            AssistantMessageDto response;
-
-            if (user != null) {
-                 response = chatService.chat(user, message, conversationId);
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
+            AssistantMessageDto response = chatService.chat(user, message, conversationId);
             return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
@@ -139,7 +137,7 @@ public class GenAIController {
         }
 
         try {
-            ConversationDto conversation = chatService.updateConversationTitle(user, conversationId, request.getTitle());
+            ConversationDto conversation = chatService.renameConversation(user, conversationId, request.getTitle());
 
             return ResponseEntity.ok(conversation);
         } catch (ResourceNotFoundException e) {
@@ -191,8 +189,13 @@ public class GenAIController {
             }
             String fullText = result.toFullText();
             return ResponseEntity.ok(fullText);
-        } catch (Exception e) {
+        } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Recipe generation failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
 

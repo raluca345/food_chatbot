@@ -24,7 +24,7 @@ public interface IChatService {
 
     List<ConversationDto> loadConversations(User user);
 
-    ConversationDto updateConversationTitle(User user, long conversationId, String title);
+    ConversationDto renameConversation(User user, long conversationId, String title);
 
     void deleteConversation(User user, long conversationId);
 }

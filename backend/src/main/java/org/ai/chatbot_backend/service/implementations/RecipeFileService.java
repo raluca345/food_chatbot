@@ -51,7 +51,17 @@ public class RecipeFileService implements IRecipeFileService {
 
     @Override
     public String getDownloadMarkdown(Long id, String backendBaseUrl) {
-        String url = backendBaseUrl.replaceAll("/+$", "") + "/api/v1/recipes/download/" + id;
+        String base = backendBaseUrl == null ? "" : backendBaseUrl.trim();
+
+        if (base.endsWith("/api/v1")) {
+            base = base.substring(0, base.length() - "/api/v1".length());
+        }
+
+        while (base.endsWith("/")) {
+            base = base.substring(0, base.length() - 1);
+        }
+
+        String url = base + "/api/v1/recipes/download/" + id;
         return "[Download recipe](" + url + ")";
     }
 

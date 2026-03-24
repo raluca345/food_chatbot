@@ -136,6 +136,31 @@ class GenAIControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user@example.com")
+    void generateRecipe_recipeNotFound_returns404() throws Exception {
+        when(recipeService.createRecipe(anyString(), anyString(), anyString()))
+                .thenThrow(new ResourceNotFoundException("No recipe"));
+
+        mockMvc.perform(post("/api/v1/recipes").with(csrf()).param("ingredients", "bad"))
+                .andExpect(status().isNotFound());
+
+        verifyNoInteractions(recipeHistoryService);
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void generateRecipe_unexpectedRuntime_returns500() throws Exception {
+        when(recipeService.createRecipe(anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("boom"));
+
+        mockMvc.perform(post("/api/v1/recipes").with(csrf()).param("ingredients", "bad"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("Internal server error"));
+
+        verifyNoInteractions(recipeHistoryService);
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
     void createConversation_ValidPromptSameUser_savesHistory() throws Exception {
         when(chatService.createAndSaveConversation(any(User.class), anyString()))
                 .thenReturn(new AssistantMessageDto(1L, "hi"));
@@ -182,7 +207,7 @@ class GenAIControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user@example.com")
-    void continueConversation_RightUser_ConvoNotFound_returnsBadRequest() throws Exception {
+    void continueConversation_RightUser_ConvoNotFound_returnsNotFound() throws Exception {
         when(chatService.chat(any(User.class), anyString(), anyLong()))
                 .thenThrow(new ResourceNotFoundException("no convo with that id"));
 
@@ -192,9 +217,24 @@ class GenAIControllerWebMvcTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(promptJson))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
 
         verifyNoInteractions(messageService);
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void continueConversation_RightUser_ConvoForbidden_returnsForbidden() throws Exception {
+        when(chatService.chat(any(User.class), anyString(), anyLong()))
+                .thenThrow(new AccessDeniedException("forbidden"));
+
+        String promptJson = mapper.writeValueAsString("how are you");
+
+        mockMvc.perform(post("/api/v1/chat/1/messages")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(promptJson))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -286,7 +326,7 @@ class GenAIControllerWebMvcTest {
         UpdateTitleRequest req = new UpdateTitleRequest();
         req.setTitle("New Title");
         ConversationDto dto = new ConversationDto(1L, "New Title", List.of());
-        when(chatService.updateConversationTitle(any(User.class), eq(1L), eq("New Title")))
+        when(chatService.renameConversation(any(User.class), eq(1L), eq("New Title")))
                 .thenReturn(dto);
 
         mockMvc.perform(patch("/api/v1/chat/1")
@@ -301,7 +341,7 @@ class GenAIControllerWebMvcTest {
     void updateConversationTitle_Empty_returns400() throws Exception {
         UpdateTitleRequest req = new UpdateTitleRequest();
         req.setTitle("");
-        when(chatService.updateConversationTitle(any(User.class), anyLong(), anyString()))
+        when(chatService.renameConversation(any(User.class), anyLong(), anyString()))
                 .thenThrow(new EmptyTitleException("empty"));
 
         mockMvc.perform(patch("/api/v1/chat/1")
@@ -316,7 +356,7 @@ class GenAIControllerWebMvcTest {
     void updateConversationTitle_NotFound_returns404() throws Exception {
         UpdateTitleRequest req = new UpdateTitleRequest();
         req.setTitle("X");
-        when(chatService.updateConversationTitle(any(User.class), anyLong(), anyString()))
+        when(chatService.renameConversation(any(User.class), anyLong(), anyString()))
                 .thenThrow(new ResourceNotFoundException("not found"));
 
         mockMvc.perform(patch("/api/v1/chat/99")
@@ -331,7 +371,7 @@ class GenAIControllerWebMvcTest {
     void updateConversationTitle_Forbidden_returns403() throws Exception {
         UpdateTitleRequest req = new UpdateTitleRequest();
         req.setTitle("X");
-        when(chatService.updateConversationTitle(any(User.class), anyLong(), anyString()))
+        when(chatService.renameConversation(any(User.class), anyLong(), anyString()))
                 .thenThrow(new AccessDeniedException("no"));
 
         mockMvc.perform(patch("/api/v1/chat/2")

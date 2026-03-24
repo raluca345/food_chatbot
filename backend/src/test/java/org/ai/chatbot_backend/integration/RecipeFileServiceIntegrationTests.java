@@ -115,7 +115,7 @@ public class RecipeFileServiceIntegrationTests {
             String recipe = "Classic Omelette\n\nIngredients:\n- 2 eggs\n- salt\n- pepper\n\nInstructions:\n1. Beat eggs.\n2. Cook in pan.";
 
             Long id = recipeFileService.storeRecipeText(recipe);
-            String downloadMd = recipeFileService.getDownloadMarkdown(id, "http://localhost:8080");
+            String downloadMd = recipeFileService.getDownloadMarkdown(id, "http://localhost:8080/api/v1");
             String modelOut = recipe + "\n\nYou can download this recipe here: " + downloadMd;
 
             when(chatModel.call(any(String.class))).thenReturn(modelOut);

@@ -41,11 +41,22 @@ public class ChatService implements IChatService {
 
     @Override
     public String systemPrompt() {
-        return "You are a helpful assistant that only answers questions about food, recipes, ingredients, and cooking. " +
-                "If the user asks to download a recipe, always use the backend API base URL: [Download Recipe]("
-                + backendBaseUrl + "/api/v1/recipes/download/{recipeId}). " +
-                "Never use the frontend domain. " +
-                "If the question is not about food, politely respond: 'Sorry, I can only answer questions about food.'";
+        return """
+                You are a helpful assistant that only answers questions about food, recipes, ingredients, and cooking. \
+                Important rules: \
+                1) Do NOT invent or include any download links or URLs. \
+                2) Do NOT mention internal IDs (recipe id, database id, file id) or placeholders. \
+                3) If you provide a recipe, output ONLY the recipe in markdown using this strict format: \
+                   ### <Title>
+                
+                #### Ingredients:
+                - ...
+                
+                #### Instructions:
+                1. ... \
+                No extra commentary before or after the recipe. \
+                If the user asks to download/save/export, just acknowledge; the backend will generate and append the download link. \
+                If the question is not about food, politely respond: 'Sorry, I can only answer questions about food.'""";
     }
 
     @Override
@@ -150,22 +161,22 @@ public class ChatService implements IChatService {
                 .stream()
                 .sorted(Comparator.comparing(Conversation::getUpdatedAt, Comparator.reverseOrder()))
                 .map(c -> new ConversationDto(
-                        c.getId(),
-                        c.getTitle(),
-                        c.getMessages().stream().map(
-                                m -> new MessageDto(
-                                        m.getId(),
-                                        m.getRole().name(),
-                                        m.getContent(),
-                                        m.getTimestamp()
-                                )
-                        ).toList()
+                                c.getId(),
+                                c.getTitle(),
+                                c.getMessages().stream().map(
+                                                m -> new MessageDto(
+                                                        m.getId(),
+                                                        m.getRole().name(),
+                                                        m.getContent(),
+                                                        m.getTimestamp()
+                                                )
+                                        ).toList()
                         )
                 ).toList();
     }
 
     @Override
-    public ConversationDto updateConversationTitle(User user, long conversationId, String title) {
+    public ConversationDto renameConversation(User user, long conversationId, String title) {
 
         if (user == null) {
             throw new ResourceNotFoundException("User not found");
@@ -203,7 +214,15 @@ public class ChatService implements IChatService {
     @Override
     public AssistantMessageDto chat(User user, String userMessage, long conversationId) {
 
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
         Conversation conversation = conversationService.findById(conversationId);
+
+        if (conversation.getUser() == null || conversation.getUser().getId() != user.getId()) {
+            throw new AccessDeniedException("Conversation does not belong to user");
+        }
 
         String assistantReply = getResponse(userMessage);
 

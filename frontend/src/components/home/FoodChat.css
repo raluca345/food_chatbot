@@ -1,6 +1,6 @@
 .message {
-  margin-bottom: 12px;
-  padding: 8px;
+  margin-bottom: 6px;
+  padding: 6px;
   border-radius: 6px;
 }
 
@@ -15,17 +15,48 @@
 .message-meta {
   font-size: 12px;
   color: #666;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .message-body {
   white-space: pre-wrap;
-  line-height: 1.45;
+  line-height: 1.25;
   word-break: break-word;
 }
 
+.message-body > :first-child {
+  margin-top: 0;
+}
+.message-body h1,
+.message-body h2,
+.message-body h3,
+.message-body h4 {
+  margin-top: 0.15rem;
+  margin-bottom: 0.15rem;
+  line-height: 1.1;
+}
+.message-body p {
+  margin: 0.12rem 0;
+}
+.message-body ul,
+.message-body ol {
+  margin: 0.12rem 0;
+  padding-left: 1.1rem;
+}
+.message-body li {
+  margin: 0.12rem 0;
+}
+.message-body blockquote {
+  margin: 0.08rem 0;
+  padding-left: 0.8rem;
+}
+
+.message-body > :last-child {
+  margin-bottom: 0;
+}
+
 .reply-btn-wrap {
-  margin-top: 8px;
+  margin-top: 4px;
   text-align: right;
 }
 
@@ -44,10 +75,10 @@
 }
 
 .output {
-  margin-top: 20px;
+  margin-top: 8px;
   text-align: left;
   background-color: #f4f4f4;
-  padding: 10px;
+  padding: 8px;
   border-radius: 5px;
 }
 
@@ -55,14 +86,14 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .chat-input {
   width: 100%;
-  min-height: 120px;
-  padding: 12px;
+  min-height: 80px;
+  padding: 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
   resize: vertical;

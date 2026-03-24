@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.config.JwtService;
 import org.ai.chatbot_backend.controller.GenAIController;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
+import org.ai.chatbot_backend.security.AuthHelper;
 import org.ai.chatbot_backend.service.implementations.*;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,8 @@ public class GenIControllerValidationTests {
     private RecipeHistoryService recipeHistoryService;
     @MockitoBean
     private JwtService jwtService;
+    @MockitoBean
+    private AuthHelper authHelper;
 
     @ParameterizedTest
     @CsvSource({

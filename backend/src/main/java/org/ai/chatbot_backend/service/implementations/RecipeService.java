@@ -1,5 +1,6 @@
 package org.ai.chatbot_backend.service.implementations;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
@@ -59,7 +60,7 @@ public class RecipeService implements IRecipeService {
               2. Prepare sauce...
               3. Bake...
 
-            Make sure the JSON is valid — no extra commentary, greetings, or text outside the JSON.
+            Make sure the JSON is valid. No extra commentary, greetings or text outside the JSON.
             If any ingredients are nonsensical, point it out politely and ask the user for clarification.
             """;
 
@@ -130,13 +131,7 @@ public class RecipeService implements IRecipeService {
             String downloadUrl = recipeFileService.getDownloadMarkdown(id, backendBaseUrl);
 
             return new CreateRecipeResult(recipeResponse.getRecipeMarkdown(), id, downloadUrl);
-
-        } catch (InappropriateRequestRefusalException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            throw new InappropriateRequestRefusalException("I'm sorry, but I can't assist with that request.");
-        }
-        catch (Exception e) {
+        } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to parse recipe JSON: " + e.getMessage(), e);
         }
     }
