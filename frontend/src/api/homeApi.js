@@ -111,11 +111,15 @@ async function _handleErrorResponse(res, fallbackMessage) {
 }
 
 export async function startConversation(message) {
-  const res = await fetch(`${API_BASE}/api/v1/chat`, {
+  const token = getToken();
+  const isLoggedIn = Boolean(token);
+  const endpoint = isLoggedIn ? "/api/v1/chat" : "/api/v1/chat/guest";
+
+  const res = await fetch(`${API_BASE}${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ..._getAuthHeader(),
+      ...(isLoggedIn ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ message }),
   });

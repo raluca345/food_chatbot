@@ -161,7 +161,7 @@ class GenAIControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user@example.com")
-    void createConversation_ValidPromptSameUser_savesHistory() throws Exception {
+    void createConversation_ValidPromptSameUser_returnsCreated() throws Exception {
         when(chatService.createAndSaveConversation(any(User.class), anyString()))
                 .thenReturn(new AssistantMessageDto(1L, "hi"));
 
@@ -171,7 +171,38 @@ class GenAIControllerWebMvcTest {
             .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(promptJson))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(username = "guest@example.com")
+    void createConversation_GuestPrompt_returnsOk() throws Exception {
+        when(chatService.createGuestConversation(anyString()))
+                .thenReturn(new AssistantMessageDto(null, "hi guest"));
+
+        String promptJson = mapper.writeValueAsString("hello");
+
+        mockMvc.perform(post("/api/v1/chat/guest")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(promptJson))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void createConversation_Unauthenticated_returns401() throws Exception {
+        when(authHelper.getAuthenticatedUserOrNull(any(Authentication.class))).thenReturn(null);
+
+        String promptJson = mapper.writeValueAsString("hello");
+
+        mockMvc.perform(post("/api/v1/chat")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(promptJson))
+                .andExpect(status().isUnauthorized());
+
+        verify(chatService, never()).createAndSaveConversation(any(User.class), anyString());
     }
 
     @Test

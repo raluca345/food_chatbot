@@ -42,17 +42,25 @@ public class GenAIController {
             @RequestBody String message,
             Authentication authentication
     ) {
+        User user = authHelper.getAuthenticatedUserOrNull(authentication);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         try {
-            User user = authHelper.getAuthenticatedUserOrNull(authentication);
+            AssistantMessageDto response = chatService.createAndSaveConversation(user, message);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
 
-            AssistantMessageDto response;
-
-            if (user != null) {
-                response = chatService.createAndSaveConversation(user, message);
-            } else {
-                response = chatService.createGuestConversation(message);
-            }
-
+    @PostMapping("/chat/guest")
+    public ResponseEntity<AssistantMessageDto> startGuestConversation(
+            @RequestBody String message
+    ) {
+        try {
+            AssistantMessageDto response = chatService.createGuestConversation(message);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
