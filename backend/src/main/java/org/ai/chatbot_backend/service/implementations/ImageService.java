@@ -94,11 +94,15 @@ public class ImageService implements IImageService {
         Prompt prompt = promptTemplate.create(params);
 
         int width, height;
+        String normalizedSize = size == null ? "" : size.trim().toLowerCase();
+        String[] parts = normalizedSize.split("x");
+        if (parts.length != 2) {
+            throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
+        }
         try {
-            String[] parts = size.toLowerCase().split("x");
             width = Integer.parseInt(parts[0]);
             height = Integer.parseInt(parts[1]);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
         }
 
@@ -218,7 +222,7 @@ public class ImageService implements IImageService {
             r2Client.deleteObject(deleteRequest);
         } catch (S3Exception e) {
             throw new RuntimeException("Failed to delete image from storage: " + e.awsErrorDetails().errorMessage(), e);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException("Failed to delete image from storage", e);
         }
 
