@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.RecipeResponse;
+import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.service.interfaces.IRecipeService;
@@ -15,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
@@ -109,7 +109,26 @@ public class RecipeService implements IRecipeService {
     }
 
     @Override
-    public CreateRecipeResult createRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
+    public CreateRecipeResult createRecipe(RecipeRequest request) {
+        if (request == null) {
+            throw new InappropriateRequestRefusalException("Ingredients are required");
+        }
+
+        String ingredients = request.getIngredients();
+        if (ingredients == null || ingredients.isBlank()) {
+            throw new InappropriateRequestRefusalException("Ingredients are required");
+        }
+
+        String cuisine = request.getCuisine();
+        if (cuisine == null || cuisine.isBlank() || "null".equalsIgnoreCase(cuisine)) {
+            cuisine = "any";
+        }
+
+        String dietaryRestrictions = request.getDietaryRestrictions();
+        if (dietaryRestrictions == null || dietaryRestrictions.isBlank() || "null".equalsIgnoreCase(dietaryRestrictions)) {
+            dietaryRestrictions = "";
+        }
+
         Prompt prompt = getSystemPrompt(ingredients, cuisine, dietaryRestrictions);
 
         try {
@@ -135,15 +154,4 @@ public class RecipeService implements IRecipeService {
             throw new RuntimeException("Failed to parse recipe JSON: " + e.getMessage(), e);
         }
     }
-
-
-    public String extractRecipeTitle(String markdown) {
-        Pattern pattern = Pattern.compile("^###\\s*(.+)$", Pattern.MULTILINE);
-        Matcher matcher = pattern.matcher(markdown);
-        if (matcher.find()) {
-            return matcher.group(1).trim();
-        }
-        return "Untitled Recipe";
-    }
-
 }

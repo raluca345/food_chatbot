@@ -3,6 +3,7 @@ package org.ai.chatbot_backend.integration;
 import com.azure.core.exception.HttpResponseException;
 import com.azure.core.http.HttpResponse;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
+import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.ChatService;
 import org.ai.chatbot_backend.service.implementations.RecipeFileService;
@@ -35,6 +36,14 @@ public class RecipeFileServiceIntegrationTests {
 
     @Autowired
     private ChatService chatService;
+
+    private static RecipeRequest recipeRequest(String ingredients, String cuisine, String dietaryRestrictions) {
+        RecipeRequest request = new RecipeRequest();
+        request.setIngredients(ingredients);
+        request.setCuisine(cuisine);
+        request.setDietaryRestrictions(dietaryRestrictions);
+        return request;
+    }
 
     @Nested
     class RecipeServiceTests {
@@ -70,7 +79,7 @@ public class RecipeFileServiceIntegrationTests {
             when(response.getResult()).thenReturn(generation);
             when(generation.getOutput()).thenReturn(message);
 
-            CreateRecipeResult result = recipeService.createRecipe("egss", "French", "null");
+            CreateRecipeResult result = recipeService.createRecipe(recipeRequest("egss", "French", "null"));
             String fullText = result.toFullText();
             assertThat(fullText).contains(recipeMarkdown);
 
@@ -94,7 +103,7 @@ public class RecipeFileServiceIntegrationTests {
             HttpResponse mockResponse = mock(HttpResponse.class);
             when(chatModel.call(any(Prompt.class))).thenThrow(new HttpResponseException("refused", mockResponse));
 
-            assertThatThrownBy(() -> recipeService.createRecipe("illegal substances", "null", "null")).isInstanceOf(InappropriateRequestRefusalException.class)
+            assertThatThrownBy(() -> recipeService.createRecipe(recipeRequest("illegal substances", "null", "null"))).isInstanceOf(InappropriateRequestRefusalException.class)
                     .hasMessageContaining("I'm sorry, but I can't assist with that request.");
 
             verifyNoInteractions(recipeFileService);

@@ -234,9 +234,15 @@ export async function generateImage(params) {
 }
 
 export async function generateRecipe(params) {
-  const query = new URLSearchParams(params);
-  const url = `${API_BASE}/api/v1/recipes?${query.toString()}`;
-  const res = await fetch(url, { method: "POST", headers: _getAuthHeader() });
+  const url = `${API_BASE}/api/v1/recipes`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ..._getAuthHeader(),
+    },
+    body: JSON.stringify(params),
+  });
   if (!res.ok) return _handleErrorResponse(res, "Failed to generate recipe");
   return res.text();
 }

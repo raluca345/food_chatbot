@@ -2,6 +2,7 @@ package org.ai.chatbot_backend.integration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
+import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.RecipeService;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,6 +20,14 @@ public class RecipeServiceIntegrationTests {
     @Autowired
     private RecipeService recipeService;
 
+    private RecipeRequest recipeRequest(String ingredients, String cuisine, String dietaryRestrictions) {
+        RecipeRequest request = new RecipeRequest();
+        request.setIngredients(ingredients);
+        request.setCuisine(cuisine);
+        request.setDietaryRestrictions(dietaryRestrictions);
+        return request;
+    }
+
     @ParameterizedTest
     @CsvSource(value = {
             "chicken, potato, carrots, cheese;French;tomato allergy",
@@ -30,8 +39,8 @@ public class RecipeServiceIntegrationTests {
             "chicken, potato, carrots, cheese;dkjhdkhd;dkjhdkhd"
     }, delimiter = ';')
     public void whenGivenValidParams_thenReturnRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
-
-        CreateRecipeResult result = recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
+        CreateRecipeResult result = recipeService.createRecipe(
+                recipeRequest(ingredients, cuisine, dietaryRestrictions));
         String recipe = result.getRecipeMarkdown();
         log.info(recipe);
 
@@ -50,8 +59,8 @@ public class RecipeServiceIntegrationTests {
             "dkjhdkhd;French;tomato allergy",
     }, delimiter = ';')
     public void whenGivenInvalidParams_thenPointItOut(String ingredients, String cuisine, String dietaryRestrictions) {
-
-        assertThatThrownBy(() ->recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions))
+        assertThatThrownBy(() -> recipeService.createRecipe(
+                recipeRequest(ingredients, cuisine, dietaryRestrictions)))
                 .isInstanceOf(InappropriateRequestRefusalException.class);
     }
 
@@ -66,7 +75,8 @@ public class RecipeServiceIntegrationTests {
             "illegal substances;French;tomato allergy"
     }, delimiter = ';')
     public void whenGivenForbiddenParams_thenRefuseToGenerateRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
-        assertThatThrownBy(() ->recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions))
+        assertThatThrownBy(() -> recipeService.createRecipe(
+                recipeRequest(ingredients, cuisine, dietaryRestrictions)))
                 .isInstanceOf(InappropriateRequestRefusalException.class);
     }
 }

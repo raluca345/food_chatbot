@@ -7,7 +7,7 @@ import org.ai.chatbot_backend.dto.AssistantMessageDto;
 import org.ai.chatbot_backend.dto.ChatMessageRequest;
 import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
-import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
+import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.dto.UpdateTitleRequest;
 import org.ai.chatbot_backend.exception.EmptyTitleException;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
@@ -17,7 +17,6 @@ import org.ai.chatbot_backend.security.AuthHelper;
 import org.ai.chatbot_backend.service.implementations.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -30,11 +29,8 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -83,6 +79,14 @@ class GenAIControllerWebMvcTest {
         return u;
     }
 
+    private String recipeRequestJson(String ingredients, String cuisine, String dietaryRestrictions) throws Exception {
+        RecipeRequest request = new RecipeRequest();
+        request.setIngredients(ingredients);
+        request.setCuisine(cuisine);
+        request.setDietaryRestrictions(dietaryRestrictions);
+        return mapper.writeValueAsString(request);
+    }
+
     @BeforeEach
     void setupAuthHelperDefault() {
         // Default: derive User from Authentication.getName(); id is 1 for simplicity
@@ -104,32 +108,28 @@ class GenAIControllerWebMvcTest {
         CreateRecipeResult createResult = new CreateRecipeResult(
                 recipeText, 42L, "[Download recipe](http://localhost/api/v1/recipes/download/42)");
 
-        when(recipeService.createRecipe(anyString(), anyString(), anyString())).thenReturn(createResult);
-        when(recipeService.extractRecipeTitle(recipeText)).thenReturn("Yummy");
+        when(recipeService.createRecipe(any(RecipeRequest.class))).thenReturn(createResult);
 
         mockMvc.perform(post("/api/v1/recipes")
                 .with(csrf())
-                .param("ingredients", "ing"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(recipeRequestJson("ing", "any", "")))
                 .andExpect(status().isOk())
                 .andExpect(content().string(createResult.toFullText()));
 
-        ArgumentCaptor<SaveRecipeInHistoryRequest> requestCaptor = ArgumentCaptor.forClass(SaveRecipeInHistoryRequest.class);
-        verify(recipeHistoryService, times(1)).save(anyLong(), requestCaptor.capture());
-
-        SaveRecipeInHistoryRequest saved = requestCaptor.getValue();
-        assertFalse(saved.getContent().contains("Download link here"));
-        assertFalse(saved.getContent().trim().endsWith("Download link here"));
-        assertEquals(42L, saved.getFileId());
-        assertEquals("Yummy", saved.getTitle());
+        verify(recipeHistoryService, times(1)).saveGeneratedRecipe(anyLong(), eq(createResult));
     }
 
     @Test
     @WithMockUser(username = "user@example.com")
     void generateRecipe_inappropriatePrompt_noSave() throws Exception {
-        when(recipeService.createRecipe(anyString(), anyString(), anyString()))
+        when(recipeService.createRecipe(any(RecipeRequest.class)))
                 .thenThrow(new InappropriateRequestRefusalException("inappropriate"));
 
-        mockMvc.perform(post("/api/v1/recipes").with(csrf()).param("ingredients", "bad"))
+        mockMvc.perform(post("/api/v1/recipes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(recipeRequestJson("bad", "any", "")))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(recipeHistoryService);
@@ -138,10 +138,13 @@ class GenAIControllerWebMvcTest {
     @Test
     @WithMockUser(username = "user@example.com")
     void generateRecipe_recipeNotFound_returns404() throws Exception {
-        when(recipeService.createRecipe(anyString(), anyString(), anyString()))
+        when(recipeService.createRecipe(any(RecipeRequest.class)))
                 .thenThrow(new ResourceNotFoundException("No recipe"));
 
-        mockMvc.perform(post("/api/v1/recipes").with(csrf()).param("ingredients", "bad"))
+        mockMvc.perform(post("/api/v1/recipes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(recipeRequestJson("bad", "any", "")))
                 .andExpect(status().isNotFound());
 
         verifyNoInteractions(recipeHistoryService);
@@ -150,10 +153,13 @@ class GenAIControllerWebMvcTest {
     @Test
     @WithMockUser(username = "user@example.com")
     void generateRecipe_unexpectedRuntime_returns500() throws Exception {
-        when(recipeService.createRecipe(anyString(), anyString(), anyString()))
+        when(recipeService.createRecipe(any(RecipeRequest.class)))
                 .thenThrow(new RuntimeException("boom"));
 
-        mockMvc.perform(post("/api/v1/recipes").with(csrf()).param("ingredients", "bad"))
+        mockMvc.perform(post("/api/v1/recipes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(recipeRequestJson("bad", "any", "")))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Internal server error"));
 

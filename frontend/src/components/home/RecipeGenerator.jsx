@@ -25,7 +25,6 @@ function RecipeGenerator() {
 
   const handleGenerateRecipe = async () => {
     setLoading(true);
-    const query = new URLSearchParams(params);
     try {
       const recipeTxt = await generateRecipe(params);
       setRecipe(recipeTxt);

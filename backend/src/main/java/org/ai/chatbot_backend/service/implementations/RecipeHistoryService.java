@@ -2,6 +2,7 @@ package org.ai.chatbot_backend.service.implementations;
 
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.dto.RecipeHistoryDto;
 import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
@@ -19,10 +20,13 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class RecipeHistoryService implements IRecipeHistoryService {
+    private static final Pattern TITLE_PATTERN = Pattern.compile("^###\\s*(.+)$", Pattern.MULTILINE);
 
     private final RecipeHistoryRepository recipeHistoryRepository;
     private final UserRepository userRepository;
@@ -50,6 +54,29 @@ public class RecipeHistoryService implements IRecipeHistoryService {
         RecipeHistory saved = recipeHistoryRepository.save(recipeHistory);
         recipeFileService.attachFileToUser(fileId, userId);
         return saved;
+    }
+
+    @Override
+    public RecipeHistory saveGeneratedRecipe(long userId, CreateRecipeResult result) {
+        if (result == null) {
+            throw new ResourceNotFoundException("Recipe generation result not found");
+        }
+        SaveRecipeInHistoryRequest request = new SaveRecipeInHistoryRequest();
+        request.setTitle(extractRecipeTitle(result.getRecipeMarkdown()));
+        request.setContent(result.contentWithoutDownload().trim());
+        request.setFileId(result.getFileId());
+        return save(userId, request);
+    }
+
+    private String extractRecipeTitle(String markdown) {
+        if (markdown == null || markdown.isBlank()) {
+            return "Untitled Recipe";
+        }
+        Matcher matcher = TITLE_PATTERN.matcher(markdown);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return "Untitled Recipe";
     }
 
     @Override

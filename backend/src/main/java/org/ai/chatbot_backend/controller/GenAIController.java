@@ -7,7 +7,7 @@ import org.ai.chatbot_backend.dto.ChatMessageRequest;
 import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.FoodImageRequest;
-import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
+import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.dto.UpdateTitleRequest;
 import org.ai.chatbot_backend.exception.EmptyTitleException;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
@@ -180,21 +180,13 @@ public class GenAIController {
 
 
     @PostMapping("/recipes")
-    public ResponseEntity<String> generateRecipe(@RequestParam String ingredients,
-                                                 @RequestParam(defaultValue = "any") String cuisine,
-                                                 @RequestParam(defaultValue = "") String dietaryRestrictions,
+    public ResponseEntity<String> generateRecipe(@RequestBody RecipeRequest request,
                                                  Authentication authentication) {
         try {
-            CreateRecipeResult result = recipeService.createRecipe(ingredients, cuisine, dietaryRestrictions);
+            CreateRecipeResult result = recipeService.createRecipe(request);
             User user = authHelper.getAuthenticatedUserOrNull(authentication);
             if (user != null) {
-                String title = recipeService.extractRecipeTitle(result.getRecipeMarkdown());
-                String contentWithoutLink = result.contentWithoutDownload().trim();
-                SaveRecipeInHistoryRequest recipeHistoryRequest = new SaveRecipeInHistoryRequest();
-                recipeHistoryRequest.setTitle(title);
-                recipeHistoryRequest.setContent(contentWithoutLink);
-                recipeHistoryRequest.setFileId(result.getFileId());
-                recipeHistoryService.save(user.getId(), recipeHistoryRequest);
+                recipeHistoryService.saveGeneratedRecipe(user.getId(), result);
             }
             String fullText = result.toFullText();
             return ResponseEntity.ok(fullText);

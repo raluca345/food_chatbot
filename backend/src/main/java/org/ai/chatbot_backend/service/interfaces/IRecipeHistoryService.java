@@ -1,5 +1,6 @@
 package org.ai.chatbot_backend.service.interfaces;
 
+import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
 import org.ai.chatbot_backend.model.RecipeHistory;
@@ -9,6 +10,7 @@ import java.util.Optional;
 
 public interface IRecipeHistoryService {
     RecipeHistory save(long userId, SaveRecipeInHistoryRequest request);
+    RecipeHistory saveGeneratedRecipe(long userId, CreateRecipeResult result);
     List<RecipeHistory> listForUser(Long userId);
     void deleteFromHistory(Long userId, Long entryId);
     Optional<RecipeHistory> findById(Long id);
