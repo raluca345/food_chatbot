@@ -6,6 +6,7 @@ import org.ai.chatbot_backend.dto.AssistantMessageDto;
 import org.ai.chatbot_backend.dto.ChatMessageRequest;
 import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
+import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.dto.UpdateTitleRequest;
 import org.ai.chatbot_backend.exception.EmptyTitleException;
@@ -21,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -222,25 +222,12 @@ public class GenAIController {
 
 
     @PostMapping("/food-images")
-    public ResponseEntity<String> generateFoodImage(Authentication authentication,
-                                    @RequestParam(defaultValue = "") String name,
-                                    @RequestParam String style,
-                                    @RequestParam(defaultValue = "1024x1024") String size,
-                                    @RequestParam(required = false) String course,
-                                    @RequestParam(required = false) String mainIngredient,
-                                    @RequestParam(required = false) String dishType) {
-
-        if (!style.equalsIgnoreCase("vivid") && !style.equalsIgnoreCase("natural")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sorry, the picked style is invalid");
-        }
-
-        if (!size.equalsIgnoreCase("1024x1024") && !size.equalsIgnoreCase("1792x1024") &&
-                !size.equalsIgnoreCase("1024x1792")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sorry, the picked size is invalid");
-        }
-
+    public ResponseEntity<String> generateFoodImage(
+            @RequestBody FoodImageRequest request,
+            Authentication authentication
+    ) {
         try {
-            String tempImageUrl = imageService.generateFoodImageFromParams(name, course, mainIngredient, dishType, style, size);
+            String tempImageUrl = imageService.generateFoodImageFromParams(request);
             if (tempImageUrl.isEmpty()) {
                 throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
             }

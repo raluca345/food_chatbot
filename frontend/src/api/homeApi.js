@@ -220,9 +220,15 @@ export async function deleteConversation(conversationId) {
 }
 
 export async function generateImage(params) {
-  const query = new URLSearchParams(params);
-  const url = `${API_BASE}/api/v1/food-images?${query.toString()}`;
-  const res = await fetch(url, { method: "POST", headers: _getAuthHeader() });
+  const url = `${API_BASE}/api/v1/food-images`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ..._getAuthHeader(),
+    },
+    body: JSON.stringify(params),
+  });
   if (!res.ok) return _handleErrorResponse(res, "Failed to generate image");
   return res.text();
 }

@@ -2,7 +2,9 @@ package org.ai.chatbot_backend.service.implementations;
 
 import com.azure.core.exception.HttpResponseException;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.dto.ImageContent;
 import org.ai.chatbot_backend.dto.ImageDto;
 import org.ai.chatbot_backend.dto.ImagePageDto;
@@ -60,8 +62,17 @@ public class ImageService implements IImageService {
     private final ImageRepository imageRepository;
 
     @Override
-    public String generateFoodImageFromParams(String name, String course, String ingredients, String dishType,
-                                              String style, String size) {
+    public String generateFoodImageFromParams(FoodImageRequest request) {
+        if (request == null) {
+            throw new InappropriateRequestRefusalException("Sorry, the request is invalid");
+        }
+
+        String name = request.getName();
+        String course = request.getCourse();
+        String ingredients = request.getIngredients();
+        String dishType = request.getDishType();
+        String style = request.getStyle();
+        String normalizedSize = getNormalizedSize(request, style);
 
         String systemPrompt = "You are a helpful assistant that only generates images of food. Do not generate images" +
                 " of anything else.";
@@ -94,7 +105,6 @@ public class ImageService implements IImageService {
         Prompt prompt = promptTemplate.create(params);
 
         int width, height;
-        String normalizedSize = size == null ? "" : size.trim().toLowerCase();
         String[] parts = normalizedSize.split("x");
         if (parts.length != 2) {
             throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
@@ -122,6 +132,25 @@ public class ImageService implements IImageService {
         } catch (HttpResponseException e) {
             throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
         }
+    }
+
+    private static @NonNull String getNormalizedSize(FoodImageRequest request, String style) {
+        String size = request.getSize();
+
+        if (style == null || (!style.equalsIgnoreCase("vivid") && !style.equalsIgnoreCase("natural"))) {
+            throw new InappropriateRequestRefusalException("Sorry, the picked style is invalid");
+        }
+
+        if (size == null || size.isBlank()) {
+            size = "1024x1024";
+        }
+        String normalizedSize = size.trim().toLowerCase();
+        if (!normalizedSize.equals("1024x1024")
+                && !normalizedSize.equals("1024x1792")
+                && !normalizedSize.equals("1792x1024")) {
+            throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
+        }
+        return normalizedSize;
     }
 
     public String persistImageForUser(String tempUrl, Long userId) throws Exception {

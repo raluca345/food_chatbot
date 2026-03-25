@@ -1,8 +1,9 @@
 package org.ai.chatbot_backend.validation;
 
-import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ai.chatbot_backend.config.JwtService;
 import org.ai.chatbot_backend.controller.GenAIController;
+import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.security.AuthHelper;
 import org.ai.chatbot_backend.service.implementations.*;
@@ -11,22 +12,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Objects;
-
 import static org.hamcrest.Matchers.containsString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-@Slf4j
 @WebMvcTest(GenAIController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class GenIControllerValidationTests {
@@ -51,33 +49,52 @@ public class GenIControllerValidationTests {
     @MockitoBean
     private AuthHelper authHelper;
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    private String foodImageRequestJson(
+            String name,
+            String style,
+            String size,
+            String course,
+            String ingredients,
+            String dishType
+    ) throws Exception {
+        FoodImageRequest request = new FoodImageRequest();
+        request.setName(name);
+        request.setStyle(style);
+        request.setSize(size);
+        request.setCourse(course);
+        request.setIngredients(ingredients);
+        request.setDishType(dishType);
+        return mapper.writeValueAsString(request);
+    }
+
     @ParameterizedTest
     @CsvSource({
             "vivid",
             "natural"
     })
     void whenValidStyles_thenReturnsImageUrl(String style) throws Exception {
-        when(imageService.generateFoodImageFromParams(any(), isNull(), isNull(), isNull(), any(),
-                any()))
+        when(imageService.generateFoodImageFromParams(any(FoodImageRequest.class)))
                 .thenReturn("https://dalleprodsec.blob.core.");
 
         mockMvc.perform(post("/api/v1/food-images")
-                .param("name", "Pizza")
-                .param("style", style)
-                .param("size", "1024x1024"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(foodImageRequestJson("Pizza", style, "1024x1024", null, null, null)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(Matchers.startsWith("https://dalleprodsec.blob.core.")));
     }
 
     @Test
     void testInvalidStyleReturnsError() throws Exception {
+        when(imageService.generateFoodImageFromParams(any(FoodImageRequest.class)))
+                .thenThrow(new InappropriateRequestRefusalException("Sorry, the picked style is invalid"));
+
         mockMvc.perform(post("/api/v1/food-images")
-                .param("name", "Pizza")
-                .param("style", "cartoon")
-                .param("size", "1024x1024"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(foodImageRequestJson("Pizza", "cartoon", "1024x1024", null, null, null)))
                 .andExpect(status().isBadRequest())
-                .andExpect(result -> assertThat(Objects.requireNonNull(result.getResolvedException()).
-                        getMessage()).contains("Sorry, the picked style is invalid"));
+                .andExpect(content().string(containsString("Sorry, the picked style is invalid")));
     }
 
     @ParameterizedTest
@@ -87,29 +104,26 @@ public class GenIControllerValidationTests {
             "1792x1024"
     })
     void whenValidSizes_thenReturnsImageUrl(String size) throws Exception {
-        when(imageService.generateFoodImageFromParams(any(), isNull(), isNull(), isNull(), any(),
-                any()))
+        when(imageService.generateFoodImageFromParams(any(FoodImageRequest.class)))
                 .thenReturn("https://dalleprodsec.blob.core.");
 
         mockMvc.perform(post("/api/v1/food-images")
-                        .param("name", "Pizza")
-                        .param("style", "vivid")
-                        .param("size", size))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(foodImageRequestJson("Pizza", "vivid", size, null, null, null)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(Matchers.startsWith("https://dalleprodsec.blob.core.")));
     }
 
     @Test
     void whenEmptyImageResponse_thenReturnsErrorMessage() throws Exception {
-        when(imageService.generateFoodImageFromParams(any(), any(), any(), any(), any(), any()))
-            .thenThrow(new InappropriateRequestRefusalException("Sorry, I can't help with that request."));
+        when(imageService.generateFoodImageFromParams(any(FoodImageRequest.class)))
+                .thenThrow(new InappropriateRequestRefusalException("Sorry, I can't help with that request."));
 
         mockMvc.perform(post("/api/v1/food-images")
-                .param("name", "Pizza")
-                .param("style", "vivid")
-                .param("size", "1024x1024"))
-            .andExpect(status().isBadRequest())
-            .andExpect(content().string(containsString("Sorry, I can't help with that request.")));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(foodImageRequestJson("Pizza", "vivid", "1024x1024", null, null, null)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Sorry, I can't help with that request.")));
     }
 
     @ParameterizedTest
@@ -122,16 +136,11 @@ public class GenIControllerValidationTests {
     })
     void whenOptionalParamsPresent_thenReturnsImageUrl(String name, String style, String size, String course,
                                                        String ingredients, String dishType) throws Exception {
-        when(imageService.generateFoodImageFromParams(any(), any(), any(), any(), any(),
-                any()))
+        when(imageService.generateFoodImageFromParams(any(FoodImageRequest.class)))
                 .thenReturn("https://dalleprodsec.blob.core.");
         mockMvc.perform(post("/api/v1/food-images")
-                .param("name", name)
-                .param("style", style)
-                .param("size", size)
-                .param("course", course)
-                .param("ingredients", ingredients)
-                .param("dishType", dishType))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(foodImageRequestJson(name, style, size, course, ingredients, dishType)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(Matchers.startsWith("https://dalleprodsec.blob.core.")));
     }
@@ -151,16 +160,12 @@ public class GenIControllerValidationTests {
     })
     void whenForbiddenOrNonsenseParams_thenReturnsError(String name, String style, String size, String course,
                                                         String ingredients, String dishType) throws Exception {
-        when(imageService.generateFoodImageFromParams(any(), any(), any(), any(), any(), any()))
+        when(imageService.generateFoodImageFromParams(any(FoodImageRequest.class)))
                 .thenThrow(new InappropriateRequestRefusalException("Sorry, I can't help with that request."));
 
         mockMvc.perform(post("/api/v1/food-images")
-                .param("name", name)
-                .param("style", style)
-                .param("size", size)
-                .param("course", course)
-                .param("ingredients", ingredients)
-                .param("dishType", dishType))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(foodImageRequestJson(name, style, size, course, ingredients, dishType)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(containsString("Sorry, I can't help with that request.")));
 
@@ -175,21 +180,12 @@ public class GenIControllerValidationTests {
     })
     void whenMissingRequiredParams_thenReturnsBadRequest(String name, String style, String size,
                                                          String course, String ingredients, String dishType) throws Exception {
-
-        log.info("name = {}, style = {}, size = {}, course = {}, ingredients = {}, dishType = {}", name, style,
-                size, course, ingredients, dishType);
-
-        when(imageService.generateFoodImageFromParams(any(), any(), any(), any(), any(), any()))
+        when(imageService.generateFoodImageFromParams(any(FoodImageRequest.class)))
                 .thenThrow(new InappropriateRequestRefusalException("Sorry, I can't help with that request."));
 
-
         mockMvc.perform(post("/api/v1/food-images")
-                .param("name", name)
-                .param("style", style)
-                .param("size", size)
-                .param("course", course)
-                .param("ingredients", ingredients)
-                .param("dishType", dishType))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(foodImageRequestJson(name, style, size, course, ingredients, dishType)))
                 .andExpect(status().isBadRequest());
     }
 }

@@ -8,7 +8,7 @@ function FoodImageGenerator() {
   const [params, setParams] = useState({
     name: "",
     style: "vivid",
-    size: "",
+    size: "1024x1024",
     course: "",
     ingredients: "",
     dishType: "",

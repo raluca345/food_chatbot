@@ -1,6 +1,7 @@
 package org.ai.chatbot_backend.integration;
 
 import com.azure.core.exception.HttpResponseException;
+import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +33,15 @@ public class ImageServiceIntegrationTests {
     }, delimiter = ';', nullValues = "null")
     public void whenGivenValidParams_thenReturnImage(String name, String course, String ingredients, String dishType,
                                                         String style, String size) {
-        String imageUrl = imageService.generateFoodImageFromParams(name, course, ingredients, dishType, style,
-                                                                size);
+        FoodImageRequest request = new FoodImageRequest();
+        request.setName(name);
+        request.setCourse(course);
+        request.setIngredients(ingredients);
+        request.setDishType(dishType);
+        request.setStyle(style);
+        request.setSize(size);
+
+        String imageUrl = imageService.generateFoodImageFromParams(request);
         assertThat(imageUrl).isNotNull();
         assertThat(imageUrl).isInstanceOf(String.class);
         assertThat(imageUrl).startsWith("https://dalleprodsec.blob.core.");
@@ -56,8 +64,16 @@ public class ImageServiceIntegrationTests {
                                                                    String dishType, String style, String size) {
         HttpResponseException httpEx = mock(HttpResponseException.class);
         when(azureOpenAiImageModel.call(any())).thenThrow(httpEx);
+        FoodImageRequest request = new FoodImageRequest();
+        request.setName(name);
+        request.setCourse(course);
+        request.setIngredients(ingredients);
+        request.setDishType(dishType);
+        request.setStyle(style);
+        request.setSize(size);
+
         assertThatThrownBy(() ->
-            imageService.generateFoodImageFromParams(name, course, ingredients, dishType, style, size)
+            imageService.generateFoodImageFromParams(request)
         ).isInstanceOf(InappropriateRequestRefusalException.class);
     }
 }
