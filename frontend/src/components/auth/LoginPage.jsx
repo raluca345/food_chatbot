@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AuthPage.css";
 import PasswordInput from "../commons/PasswordInput";
-import { loginUser } from "../../api/homeApi";
+import { loginUser } from "../../api/authApi";
 
 export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");

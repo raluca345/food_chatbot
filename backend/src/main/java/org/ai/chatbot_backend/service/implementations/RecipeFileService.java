@@ -72,9 +72,16 @@ public class RecipeFileService implements IRecipeFileService {
                 .orElseThrow(() -> new ResourceNotFoundException("Recipe file not found"));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        if (file.getUser() == null) {
+        User owner = file.getUser();
+        if (owner == null) {
             file.setUser(user);
             recipeFileRepository.save(file);
+            return;
+        }
+
+        Long ownerId = owner.getId();
+        if (!ownerId.equals(userId)) {
+            throw new ResourceNotFoundException("Recipe file not found");
         }
     }
 }

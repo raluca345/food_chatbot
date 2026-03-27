@@ -77,7 +77,11 @@ class GenAIControllerUnitTest {
         var resp = genAIController.generateRecipe(request, auth);
 
         assertEquals(HttpStatusCode.valueOf(200), resp.getStatusCode());
-        assertEquals(createResult.toFullText(), resp.getBody());
+        CreateRecipeResult responseBody = (CreateRecipeResult) resp.getBody();
+        assertEquals(createResult.getRecipeMarkdown(), responseBody.getRecipeMarkdown());
+        assertEquals(createResult.getFileId(), responseBody.getFileId());
+        assertEquals(createResult.getDownloadMarkdown(), responseBody.getDownloadMarkdown());
+        assertEquals(createResult.toFullText(), responseBody.getFullText());
         verify(recipeHistoryService).saveGeneratedRecipe(eq(123L), eq(createResult));
     }
 

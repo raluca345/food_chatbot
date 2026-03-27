@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = GenAIController.class)
@@ -115,7 +116,10 @@ class GenAIControllerWebMvcTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(recipeRequestJson("ing", "any", "")))
                 .andExpect(status().isOk())
-                .andExpect(content().string(createResult.toFullText()));
+                .andExpect(jsonPath("$.recipeMarkdown").value(createResult.getRecipeMarkdown()))
+                .andExpect(jsonPath("$.fileId").value(createResult.getFileId()))
+                .andExpect(jsonPath("$.downloadMarkdown").value(createResult.getDownloadMarkdown()))
+                .andExpect(jsonPath("$.fullText").value(createResult.toFullText()));
 
         verify(recipeHistoryService, times(1)).saveGeneratedRecipe(anyLong(), eq(createResult));
     }
@@ -164,6 +168,25 @@ class GenAIControllerWebMvcTest {
                 .andExpect(content().string("Internal server error"));
 
         verifyNoInteractions(recipeHistoryService);
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void generateRecipe_fileOwnedByAnotherUser_returns404() throws Exception {
+        String recipeText = "**Recipe Title:** Yummy\n\nIngredients:\n- a\n- b";
+        CreateRecipeResult createResult = new CreateRecipeResult(
+                recipeText, 42L, "[Download recipe](http://localhost/api/v1/recipes/download/42)");
+
+        when(recipeService.createRecipe(any(RecipeRequest.class))).thenReturn(createResult);
+        doThrow(new ResourceNotFoundException("Recipe file not found"))
+                .when(recipeHistoryService).saveGeneratedRecipe(anyLong(), eq(createResult));
+
+        mockMvc.perform(post("/api/v1/recipes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(recipeRequestJson("ing", "any", "")))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Recipe file not found"));
     }
 
     @Test

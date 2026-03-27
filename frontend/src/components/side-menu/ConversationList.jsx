@@ -5,7 +5,7 @@ import {
   deleteConversation,
   loadConversations,
   renameConversation,
-} from "../../api/homeApi";
+} from "../../api/chatApi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaEllipsis } from "react-icons/fa6";
 import ContextMenu from "../context-menu/ContextMenu";

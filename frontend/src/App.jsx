@@ -8,7 +8,7 @@ import Sidebar from "./components/side-menu/Sidebar";
 import { getEmailFromToken } from "./utils/jwt";
 import Tabs from "./components/Tabs/Tabs";
 import AppRoutes from "./routes/AppRoutes";
-import { getToken } from "./api/homeApi";
+import { getToken } from "./api/apiCore";
 
 function App() {
   const navigate = useNavigate();

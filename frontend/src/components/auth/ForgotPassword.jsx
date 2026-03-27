@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./AuthPage.css";
 import "./ForgotPassword.css";
 import { useNavigate } from "react-router";
-import { getToken, sendPasswordResetEmail } from "../../api/homeApi";
+import { getToken } from "../../api/apiCore";
+import { sendPasswordResetEmail } from "../../api/authApi";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");

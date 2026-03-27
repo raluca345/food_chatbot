@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "./Gallery.css";
 import { LuDownload } from "react-icons/lu";
 import { FaTrashCan } from "react-icons/fa6";
-import { getUserImages, deleteImage, downloadImage } from "../../api/homeApi";
+import { getUserImages, deleteImage, downloadImage } from "../../api/galleryApi";
 import { IoClose } from "react-icons/io5";
 import Spinner from "../commons/Spinner";
 import PaginationControls from "../commons/PaginationControls";

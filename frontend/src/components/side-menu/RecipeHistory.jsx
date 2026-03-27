@@ -12,7 +12,7 @@ import {
   getUserRecipeHistory,
   deleteRecipeHistoryEntry,
   downloadRecipeFromHistory,
-} from "../../api/homeApi";
+} from "../../api/recipeHistoryApi";
 import Spinner from "../commons/Spinner";
 import ConfirmModal from "../commons/ConfirmModal";
 import PaginationControls from "../commons/PaginationControls";

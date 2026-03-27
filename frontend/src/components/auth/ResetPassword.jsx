@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PasswordInput from "../commons/PasswordInput";
 import "./ResetPassword.css";
-import { getToken, changePassword } from "../../api/homeApi";
+import { getToken } from "../../api/apiCore";
+import { changePassword } from "../../api/authApi";
 
 export default function ResetPassword() {
   const navigate = useNavigate();

@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
@@ -64,13 +66,17 @@ public class PasswordResetController {
     public ResponseEntity<?> changePassword(@RequestBody PasswordDto newPassword) {
         try {
             passwordResetWorkflowService.resetPassword(newPassword.getToken(), newPassword.getPassword());
-            return ResponseEntity.noContent().build();
+            //sending 303 to prevent form resubmission
+            return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                    .location(URI.create(FRONTEND_BASE_URL + "/login"))
+                    .build();
         } catch (PasswordResetTokenExpiredException e) {
             return ResponseEntity.status(HttpStatus.GONE).body(e.getMessage());
         }  catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Internal server error");
         }
     }
 }

@@ -40,7 +40,7 @@ public class UserGalleryController {
     }
 
     @GetMapping("/me/images/{imageId}/download")
-    public ResponseEntity<Resource> downloadImage(Authentication authentication, @PathVariable("imageId") Long imageId) {
+    public ResponseEntity<Resource> downloadImage(Authentication authentication, @PathVariable Long imageId) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);

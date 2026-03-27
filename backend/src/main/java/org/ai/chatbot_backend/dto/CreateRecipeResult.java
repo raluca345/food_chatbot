@@ -14,6 +14,11 @@ public class CreateRecipeResult {
     private Long fileId;
     private String downloadMarkdown;
 
+    // Jackson exposes this as JSON field fullText
+    public String getFullText() {
+        return toFullText();
+    }
+
     public String toFullText() {
         String dm = downloadMarkdown == null ? "" : downloadMarkdown;
         if (dm.isEmpty()) return recipeMarkdown == null ? "" : recipeMarkdown;

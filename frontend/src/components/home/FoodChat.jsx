@@ -14,7 +14,7 @@ import {
   startConversation,
   sendMessageToConversation,
   loadConversation,
-} from "../../api/homeApi";
+} from "../../api/chatApi";
 
 import { getIdFromToken, getNameFromToken } from "../../utils/jwt";
 

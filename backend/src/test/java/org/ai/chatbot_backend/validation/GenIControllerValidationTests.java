@@ -23,6 +23,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(GenAIController.class)
@@ -82,7 +83,7 @@ public class GenIControllerValidationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(foodImageRequestJson("Pizza", style, "1024x1024", null, null, null)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Matchers.startsWith("https://dalleprodsec.blob.core.")));
+                .andExpect(jsonPath("$.url", Matchers.startsWith("https://dalleprodsec.blob.core.")));
     }
 
     @Test
@@ -111,7 +112,7 @@ public class GenIControllerValidationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(foodImageRequestJson("Pizza", "vivid", size, null, null, null)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Matchers.startsWith("https://dalleprodsec.blob.core.")));
+                .andExpect(jsonPath("$.url", Matchers.startsWith("https://dalleprodsec.blob.core.")));
     }
 
     @Test
@@ -142,7 +143,7 @@ public class GenIControllerValidationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(foodImageRequestJson(name, style, size, course, ingredients, dishType)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Matchers.startsWith("https://dalleprodsec.blob.core.")));
+                .andExpect(jsonPath("$.url", Matchers.startsWith("https://dalleprodsec.blob.core.")));
     }
 
     @ParameterizedTest

@@ -52,6 +52,8 @@ public class ImageService implements IImageService {
     @Value("${cloudflare.r2.bucket}")
     @Getter
     private String bucket;
+    @Value("${image.mock:false}")
+    private boolean mockEnabled;
 
     private final UserService userService;
     private final S3Client r2Client;
@@ -63,6 +65,10 @@ public class ImageService implements IImageService {
 
     @Override
     public String generateFoodImageFromParams(FoodImageRequest request) {
+        if (mockEnabled) {
+            return "https://picsum.photos/512";
+        }
+
         if (request == null) {
             throw new InappropriateRequestRefusalException("Sorry, the request is invalid");
         }
@@ -153,7 +159,7 @@ public class ImageService implements IImageService {
         return normalizedSize;
     }
 
-    public String persistImageForUser(String tempUrl, Long userId) throws Exception {
+    public ImageDto persistImageForUser(String tempUrl, Long userId) throws Exception {
 
         Path tempFile = Files.createTempFile("img-", ".png");
         try (InputStream in = new URI(tempUrl).toURL().openStream()) {
@@ -180,11 +186,11 @@ public class ImageService implements IImageService {
                 .filename(filename)
                 .createdAt(LocalDateTime.now())
                 .build();
-        imageRepository.save(image);
+        Image savedImage = imageRepository.save(image);
 
         Files.deleteIfExists(tempFile);
 
-        return signedUrl;
+        return new ImageDto(savedImage.getId(), signedUrl, savedImage.getFilename(), savedImage.getCreatedAt());
     }
 
     @Override

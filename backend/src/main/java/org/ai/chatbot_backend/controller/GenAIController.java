@@ -7,6 +7,7 @@ import org.ai.chatbot_backend.dto.ChatMessageRequest;
 import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.FoodImageRequest;
+import org.ai.chatbot_backend.dto.ImageDto;
 import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.dto.UpdateTitleRequest;
 import org.ai.chatbot_backend.exception.EmptyTitleException;
@@ -180,16 +181,15 @@ public class GenAIController {
 
 
     @PostMapping("/recipes")
-    public ResponseEntity<String> generateRecipe(@RequestBody RecipeRequest request,
-                                                 Authentication authentication) {
+    public ResponseEntity<?> generateRecipe(@RequestBody RecipeRequest request,
+                                            Authentication authentication) {
         try {
             CreateRecipeResult result = recipeService.createRecipe(request);
             User user = authHelper.getAuthenticatedUserOrNull(authentication);
             if (user != null) {
                 recipeHistoryService.saveGeneratedRecipe(user.getId(), result);
             }
-            String fullText = result.toFullText();
-            return ResponseEntity.ok(fullText);
+            return ResponseEntity.ok(result);
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (ResourceNotFoundException e) {
@@ -214,7 +214,7 @@ public class GenAIController {
 
 
     @PostMapping("/food-images")
-    public ResponseEntity<String> generateFoodImage(
+    public ResponseEntity<?> generateFoodImage(
             @RequestBody FoodImageRequest request,
             Authentication authentication
     ) {
@@ -226,11 +226,11 @@ public class GenAIController {
             log.info(tempImageUrl);
             User user = authHelper.getAuthenticatedUserOrNull(authentication);
             if (user != null) {
-                String publicImageUrl = imageService.persistImageForUser(tempImageUrl, user.getId());
-                log.info(publicImageUrl);
-                return ResponseEntity.ok(publicImageUrl);
+                ImageDto generatedImage = imageService.persistImageForUser(tempImageUrl, user.getId());
+                log.info(generatedImage.getUrl());
+                return ResponseEntity.ok(generatedImage);
             }
-            return ResponseEntity.ok(tempImageUrl);
+            return ResponseEntity.ok(new ImageDto(0L, tempImageUrl, null, null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }

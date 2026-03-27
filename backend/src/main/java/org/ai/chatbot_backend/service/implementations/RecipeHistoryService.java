@@ -3,7 +3,6 @@ package org.ai.chatbot_backend.service.implementations;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
-import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.dto.RecipeHistoryDto;
 import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
@@ -34,38 +33,38 @@ public class RecipeHistoryService implements IRecipeHistoryService {
     private final IRecipeFileService recipeFileService;
 
     @Override
-    public RecipeHistory save(long userId, SaveRecipeInHistoryRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        RecipeHistory recipeHistory = RecipeHistory.builder()
-                .user(user)
-                .title(request.getTitle())
-                .content(request.getContent())
-                .build();
-
-        Long fileId = request.getFileId();
-        if (fileId != null) {
-            RecipeFile file = recipeFileRepository.findById(fileId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Recipe file not found"));
-            recipeHistory.setRecipeFile(file);
-        }
-
-        RecipeHistory saved = recipeHistoryRepository.save(recipeHistory);
-        recipeFileService.attachFileToUser(fileId, userId);
-        return saved;
-    }
-
-    @Override
+    @Transactional
     public RecipeHistory saveGeneratedRecipe(long userId, CreateRecipeResult result) {
         if (result == null) {
             throw new ResourceNotFoundException("Recipe generation result not found");
         }
-        SaveRecipeInHistoryRequest request = new SaveRecipeInHistoryRequest();
-        request.setTitle(extractRecipeTitle(result.getRecipeMarkdown()));
-        request.setContent(result.contentWithoutDownload().trim());
-        request.setFileId(result.getFileId());
-        return save(userId, request);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Long fileId = result.getFileId();
+        RecipeFile file = null;
+        if (fileId != null) {
+            file = recipeFileRepository.findById(fileId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Recipe file not found"));
+            if (file.getUser() != null) {
+                Long ownerId = file.getUser().getId();
+                if (!ownerId.equals(userId)) {
+                    throw new ResourceNotFoundException("Recipe file not found");
+                }
+            }
+        }
+
+        RecipeHistory recipeHistory = RecipeHistory.builder()
+                .user(user)
+                .title(extractRecipeTitle(result.getRecipeMarkdown()))
+                .content(result.contentWithoutDownload().trim())
+                .recipeFile(file)
+                .build();
+
+        RecipeHistory saved = recipeHistoryRepository.save(recipeHistory);
+        recipeFileService.attachFileToUser(fileId, userId);
+        return saved;
     }
 
     private String extractRecipeTitle(String markdown) {

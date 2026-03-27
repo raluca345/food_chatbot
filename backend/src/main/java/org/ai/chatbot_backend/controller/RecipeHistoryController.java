@@ -1,7 +1,6 @@
 package org.ai.chatbot_backend.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.ai.chatbot_backend.dto.SaveRecipeInHistoryRequest;
 import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.RecipeHistory;
@@ -27,17 +26,6 @@ public class RecipeHistoryController {
     private final RecipeFileService recipeFileService;
     private final AuthHelper authHelper;
 
-    @PostMapping
-    public ResponseEntity<?> saveHistory(@RequestBody SaveRecipeInHistoryRequest request,
-                                                     Authentication authentication) {
-        User user = authHelper.getAuthenticatedUserOrNull(authentication);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-        }
-        RecipeHistory recipeHistory = recipeHistoryService.save(user.getId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(recipeHistory.toDto());
-    }
-
     @GetMapping
     public ResponseEntity<?> getHistory(Authentication authentication,
             @RequestParam(defaultValue = "1") int page,
@@ -53,8 +41,8 @@ public class RecipeHistoryController {
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteHistoryEntry(@PathVariable("id") long id,
-                                                            Authentication authentication) {
+    public ResponseEntity<?> deleteHistoryEntry(@PathVariable long id,
+                                                Authentication authentication) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
@@ -70,8 +58,8 @@ public class RecipeHistoryController {
     }
 
     @GetMapping("{id}/download")
-    public ResponseEntity<?> downloadHistoryRecipe(@PathVariable("id") Long id,
-                                                          Authentication authentication) {
+    public ResponseEntity<?> downloadHistoryRecipe(@PathVariable Long id,
+                                                   Authentication authentication) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");

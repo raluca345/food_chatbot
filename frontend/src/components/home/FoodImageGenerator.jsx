@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Spinner from "../commons/Spinner";
 import "./FoodImageGenerator.css";
 
-import { generateImage } from "../../api/homeApi";
+import { generateImage } from "../../api/generationApi";
 
 function FoodImageGenerator() {
   const [params, setParams] = useState({
@@ -28,7 +28,11 @@ function FoodImageGenerator() {
     setError("");
     setLoading(true);
     try {
-      const url = await generateImage(params);
+      const generatedImage = await generateImage(params);
+      const url = generatedImage?.url;
+      if (!url) {
+        throw new Error("Generated image URL missing");
+      }
       setImageUrls([url]);
     } catch (err) {
       console.error("Error generating image: ", err);
