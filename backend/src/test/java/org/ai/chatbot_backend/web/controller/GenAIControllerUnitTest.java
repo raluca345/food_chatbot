@@ -72,7 +72,7 @@ class GenAIControllerUnitTest {
         request.setCuisine("any");
         request.setDietaryRestrictions("");
 
-        when(recipeService.createRecipe(any(RecipeRequest.class))).thenReturn(createResult);
+        when(recipeService.createRecipe(any(RecipeRequest.class), eq(123L))).thenReturn(createResult);
 
         var resp = genAIController.generateRecipe(request, auth);
 
@@ -92,7 +92,7 @@ class GenAIControllerUnitTest {
         request.setCuisine("any");
         request.setDietaryRestrictions("");
 
-        when(recipeService.createRecipe(any(RecipeRequest.class)))
+        when(recipeService.createRecipe(any(RecipeRequest.class), eq(123L)))
                 .thenThrow(new InappropriateRequestRefusalException("inappropriate"));
 
         var resp = genAIController.generateRecipe(request, auth);

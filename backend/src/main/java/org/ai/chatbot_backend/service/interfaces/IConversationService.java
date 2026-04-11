@@ -4,8 +4,7 @@ import jakarta.transaction.Transactional;
 import org.ai.chatbot_backend.model.Conversation;
 import org.ai.chatbot_backend.model.User;
 import org.springframework.ai.chat.model.ChatModel;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface IConversationService {
     Conversation createConversation(User user);
@@ -19,7 +18,7 @@ public interface IConversationService {
 
     Conversation findById(long conversationId);
 
-    List<Conversation> findByUser(User user);
+    Page<Conversation> findByUser(User user, int page, int pageSize);
 
     String createTitle(ChatModel model, String userPrompt);
 }

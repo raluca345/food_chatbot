@@ -10,11 +10,13 @@ import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.ConversationRepository;
 import org.ai.chatbot_backend.service.interfaces.IConversationService;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +57,7 @@ public class ConversationService implements IConversationService {
     @Transactional
     public Conversation updateTitle(User user, long id, String title) {
 
-        if (title.isBlank()) {
+        if (title == null || title.isBlank()) {
             throw new EmptyTitleException("Title can't be blank");
         }
 
@@ -91,8 +93,12 @@ public class ConversationService implements IConversationService {
     }
 
     @Override
-    public List<Conversation> findByUser(User user) {
-        return conversationRepository.findByUserId(user.getId());
+    public Page<Conversation> findByUser(User user, int page, int pageSize) {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+
+        Pageable pageable = PageRequest.of(page - 1, pageSize);
+        return conversationRepository.findByUserIdOrderByUpdatedAtDesc(user.getId(), pageable);
     }
 
     @Override
@@ -103,7 +109,11 @@ public class ConversationService implements IConversationService {
         String fullPrompt = prompt + "\nUser: " + userPrompt;
 
         try {
-            return model.call(fullPrompt);
+            String result = model.call(fullPrompt);
+            if (result == null || result.isBlank()) {
+                return "New Chat";
+            }
+            return result;
         }  catch (HttpResponseException e) {
             return "New Chat";
         }

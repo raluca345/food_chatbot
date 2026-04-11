@@ -7,10 +7,10 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class RecipeHistoryPageDto {
-    private List<RecipeHistoryDto> items;
-    private int total;
+@AllArgsConstructor
+public class PageResult<T> {
+    private List<T> items;
+    private long total;
 }
 

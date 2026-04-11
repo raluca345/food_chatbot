@@ -7,11 +7,15 @@ import org.ai.chatbot_backend.dto.AssistantMessageDto;
 import org.ai.chatbot_backend.dto.ChatMessageRequest;
 import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
+import org.ai.chatbot_backend.dto.MessageDto;
+import org.ai.chatbot_backend.dto.PageResult;
+import org.ai.chatbot_backend.dto.RecipeDownloadRequest;
 import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.dto.UpdateTitleRequest;
 import org.ai.chatbot_backend.exception.EmptyTitleException;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
+import org.ai.chatbot_backend.model.Conversation;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.security.AuthHelper;
 import org.ai.chatbot_backend.service.implementations.*;
@@ -19,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -30,6 +35,7 @@ import org.springframework.security.access.AccessDeniedException;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -109,7 +115,7 @@ class GenAIControllerWebMvcTest {
         CreateRecipeResult createResult = new CreateRecipeResult(
                 recipeText, 42L, "[Download recipe](http://localhost/api/v1/recipes/download/42)");
 
-        when(recipeService.createRecipe(any(RecipeRequest.class))).thenReturn(createResult);
+        when(recipeService.createRecipe(any(RecipeRequest.class), anyLong())).thenReturn(createResult);
 
         mockMvc.perform(post("/api/v1/recipes")
                 .with(csrf())
@@ -127,7 +133,7 @@ class GenAIControllerWebMvcTest {
     @Test
     @WithMockUser(username = "user@example.com")
     void generateRecipe_inappropriatePrompt_noSave() throws Exception {
-        when(recipeService.createRecipe(any(RecipeRequest.class)))
+        when(recipeService.createRecipe(any(RecipeRequest.class), anyLong()))
                 .thenThrow(new InappropriateRequestRefusalException("inappropriate"));
 
         mockMvc.perform(post("/api/v1/recipes")
@@ -142,7 +148,7 @@ class GenAIControllerWebMvcTest {
     @Test
     @WithMockUser(username = "user@example.com")
     void generateRecipe_recipeNotFound_returns404() throws Exception {
-        when(recipeService.createRecipe(any(RecipeRequest.class)))
+        when(recipeService.createRecipe(any(RecipeRequest.class), anyLong()))
                 .thenThrow(new ResourceNotFoundException("No recipe"));
 
         mockMvc.perform(post("/api/v1/recipes")
@@ -157,7 +163,7 @@ class GenAIControllerWebMvcTest {
     @Test
     @WithMockUser(username = "user@example.com")
     void generateRecipe_unexpectedRuntime_returns500() throws Exception {
-        when(recipeService.createRecipe(any(RecipeRequest.class)))
+        when(recipeService.createRecipe(any(RecipeRequest.class), anyLong()))
                 .thenThrow(new RuntimeException("boom"));
 
         mockMvc.perform(post("/api/v1/recipes")
@@ -177,7 +183,7 @@ class GenAIControllerWebMvcTest {
         CreateRecipeResult createResult = new CreateRecipeResult(
                 recipeText, 42L, "[Download recipe](http://localhost/api/v1/recipes/download/42)");
 
-        when(recipeService.createRecipe(any(RecipeRequest.class))).thenReturn(createResult);
+        when(recipeService.createRecipe(any(RecipeRequest.class), anyLong())).thenReturn(createResult);
         doThrow(new ResourceNotFoundException("Recipe file not found"))
                 .when(recipeHistoryService).saveGeneratedRecipe(anyLong(), eq(createResult));
 
@@ -187,6 +193,43 @@ class GenAIControllerWebMvcTest {
                         .content(recipeRequestJson("ing", "any", "")))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Recipe file not found"));
+    }
+
+    @Test
+    @WithMockUser(username = "guest@example.com")
+    void downloadGuestRecipe_validBody_returnsAttachment() throws Exception {
+        RecipeDownloadRequest request = new RecipeDownloadRequest();
+        request.setRecipeMarkdown("""
+                ### Test Recipe
+
+                #### Ingredients:
+                - test ingredient
+
+                #### Instructions:
+                1. test step
+                """);
+        when(recipeFileService.getRecipeFileForGuest(request.getRecipeMarkdown()))
+                .thenReturn(new ByteArrayResource(request.getRecipeMarkdown().getBytes()));
+
+        mockMvc.perform(post("/api/v1/recipes/download/guest")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(request.getRecipeMarkdown()));
+    }
+
+    @Test
+    @WithMockUser(username = "guest@example.com")
+    void downloadGuestRecipe_emptyBody_returnsBadRequest() throws Exception {
+        RecipeDownloadRequest request = new RecipeDownloadRequest();
+        request.setRecipeMarkdown(" ");
+
+        mockMvc.perform(post("/api/v1/recipes/download/guest")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -305,28 +348,37 @@ class GenAIControllerWebMvcTest {
         req.setMessage("how are you");
         String promptJson = mapper.writeValueAsString(req);
 
-        mockMvc.perform(post("/api/v1/chat/1/messages")
+                mockMvc.perform(post("/api/v1/chat/1/messages")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(promptJson))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
     @WithMockUser(username = "user@example.com")
     void getConversation_RightUser_returnsConversation() throws Exception {
-        ConversationDto dto = new ConversationDto(1L, "title", List.of());
-        when(chatService.loadConversation(any(User.class), anyLong())).thenReturn(dto);
+        MessageDto messageDto = new MessageDto(1L, "ASSISTANT", "hello", null);
+        PageResult<MessageDto> page = new PageResult<>(List.of(messageDto), 1L);
+        Conversation conversation = new Conversation();
+        conversation.setId(1L);
+        conversation.setTitle("Healthy Chat");
+        when(chatService.loadConversation(any(User.class), anyLong(), anyInt(), anyInt())).thenReturn(page);
+        when(conversationService.findById(1L)).thenReturn(conversation);
 
         mockMvc.perform(get("/api/v1/chat/1").with(csrf()))
-                .andExpect(status().isOk());
-        verify(chatService, times(1)).loadConversation(any(User.class), eq(1L));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conversationId").value(1))
+                .andExpect(jsonPath("$.title").value("Healthy Chat"))
+                .andExpect(jsonPath("$.messages.length()").value(1))
+                .andExpect(jsonPath("$.total").value(1));
+        verify(chatService, times(1)).loadConversation(any(User.class), eq(1L), anyInt(), anyInt());
     }
 
     @Test
     @WithMockUser(username = "user@example.com")
     void getConversation_NotFound_returns404() throws Exception {
-        when(chatService.loadConversation(any(User.class), anyLong()))
+        when(chatService.loadConversation(any(User.class), anyLong(), anyInt(), anyInt()))
                 .thenThrow(new ResourceNotFoundException("not found"));
 
         mockMvc.perform(get("/api/v1/chat/999").with(csrf()))
@@ -336,11 +388,11 @@ class GenAIControllerWebMvcTest {
     @Test
     @WithMockUser(username = "user@example.com")
     void getConversation_AccessDenied_returns403() throws Exception {
-        when(chatService.loadConversation(any(User.class), anyLong()))
+        when(chatService.loadConversation(any(User.class), anyLong(), anyInt(), anyInt()))
                 .thenThrow(new AccessDeniedException("forbidden"));
 
         mockMvc.perform(get("/api/v1/chat/2").with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -356,20 +408,23 @@ class GenAIControllerWebMvcTest {
     @Test
     @WithMockUser(username = "user@example.com")
     void listConversations_RightUser_returnsList() throws Exception {
-        List<ConversationDto> list = List.of(
+        List<ConversationDto> items = List.of(
                 new ConversationDto(1L, "t1", List.of()),
                 new ConversationDto(2L, "t2", List.of())
         );
-        when(chatService.loadConversations(any(User.class))).thenReturn(list);
+        PageResult<ConversationDto> pageDto = new PageResult<>(items, 2L);
+        when(chatService.loadConversations(any(User.class), anyInt(), anyInt())).thenReturn(pageDto);
 
         mockMvc.perform(get("/api/v1/chat").with(csrf()))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.total").value(2));
     }
 
     @Test
     @WithMockUser(username = "user@example.com")
     void listConversations_NotFound_returns404() throws Exception {
-        when(chatService.loadConversations(any(User.class)))
+        when(chatService.loadConversations(any(User.class), anyInt(), anyInt()))
                 .thenThrow(new ResourceNotFoundException("none"));
 
         mockMvc.perform(get("/api/v1/chat").with(csrf()))
@@ -379,11 +434,11 @@ class GenAIControllerWebMvcTest {
     @Test
     @WithMockUser(username = "user@example.com")
     void listConversations_AccessDenied_returns403() throws Exception {
-        when(chatService.loadConversations(any(User.class)))
+        when(chatService.loadConversations(any(User.class), anyInt(), anyInt()))
                 .thenThrow(new AccessDeniedException("forbidden"));
 
         mockMvc.perform(get("/api/v1/chat").with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -453,7 +508,7 @@ class GenAIControllerWebMvcTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(req)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -497,7 +552,7 @@ class GenAIControllerWebMvcTest {
                 .deleteConversation(any(User.class), anyLong());
 
         mockMvc.perform(delete("/api/v1/chat/2").with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test

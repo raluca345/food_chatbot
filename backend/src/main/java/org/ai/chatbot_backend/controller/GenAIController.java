@@ -8,23 +8,26 @@ import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.dto.ImageDto;
+import org.ai.chatbot_backend.dto.MessageDto;
+import org.ai.chatbot_backend.dto.PageResult;
+import org.ai.chatbot_backend.dto.RecipeDownloadRequest;
 import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.dto.UpdateTitleRequest;
 import org.ai.chatbot_backend.exception.EmptyTitleException;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
+import org.ai.chatbot_backend.model.Conversation;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.security.AuthHelper;
 import org.ai.chatbot_backend.service.implementations.*;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -37,6 +40,7 @@ public class GenAIController {
     private final RecipeService recipeService;
     private final RecipeFileService recipeFileService;
     private final RecipeHistoryService recipeHistoryService;
+    private final ConversationService conversationService;
     private final AuthHelper authHelper;
 
     @PostMapping("/chat")
@@ -83,10 +87,8 @@ public class GenAIController {
         try {
             AssistantMessageDto response = chatService.chat(user, request.getMessage(), conversationId);
             return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (InappropriateRequestRefusalException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
@@ -95,6 +97,8 @@ public class GenAIController {
     @GetMapping("/chat/{conversationId}")
     public ResponseEntity<ConversationDto> getConversation(
             @PathVariable long conversationId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize,
             Authentication authentication) {
 
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
@@ -103,37 +107,41 @@ public class GenAIController {
         }
 
         try {
-            ConversationDto conversation =
-                    chatService.loadConversation(user, conversationId);
+            PageResult<MessageDto> conversation = chatService.loadConversation(user, conversationId, page, pageSize);
+            Conversation conversationEntity = conversationService.findById(conversationId);
+            ConversationDto body = new ConversationDto(
+                    conversationId,
+                    conversationEntity.getTitle(),
+                    conversation.getItems(),
+                    conversation.getTotal()
+            );
+            return ResponseEntity.ok(body);
 
-            return ResponseEntity.ok(conversation);
-
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 
     @GetMapping("/chat")
-    public ResponseEntity<List<ConversationDto>> getConversations(Authentication authentication) {
+    public ResponseEntity<PageResult<ConversationDto>> getConversations(
+            Authentication authentication,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try {
-            List<ConversationDto> conversation =
-                    chatService.loadConversations(user);
+            PageResult<ConversationDto> conversation =
+                    chatService.loadConversations(user, page, pageSize);
 
             return ResponseEntity.ok(conversation);
 
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 
@@ -150,11 +158,9 @@ public class GenAIController {
             ConversationDto conversation = chatService.renameConversation(user, conversationId, request.getTitle());
 
             return ResponseEntity.ok(conversation);
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (EmptyTitleException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
@@ -172,10 +178,8 @@ public class GenAIController {
         try {
             chatService.deleteConversation(user, conversationId);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Conversation has been deleted");
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 
@@ -184,8 +188,8 @@ public class GenAIController {
     public ResponseEntity<?> generateRecipe(@RequestBody RecipeRequest request,
                                             Authentication authentication) {
         try {
-            CreateRecipeResult result = recipeService.createRecipe(request);
             User user = authHelper.getAuthenticatedUserOrNull(authentication);
+            CreateRecipeResult result = recipeService.createRecipe(request, user != null ? user.getId() : null);
             if (user != null) {
                 recipeHistoryService.saveGeneratedRecipe(user.getId(), result);
             }
@@ -201,14 +205,33 @@ public class GenAIController {
     }
 
     @GetMapping("/recipes/download/{id}")
-    public ResponseEntity<Resource> downloadRecipe(@PathVariable Long id) {
-        Resource resource = recipeFileService.getRecipeFile(id);
-        if (resource == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    public ResponseEntity<Resource> downloadRecipe(@PathVariable Long id, Authentication authentication) {
+        User user = authHelper.getAuthenticatedUserOrNull(authentication);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
+        try {
+            Resource resource = recipeFileService.getRecipeFileForUser(id, user.getId());
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + id + ".txt")
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(resource);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    @PostMapping("/recipes/download/guest")
+    public ResponseEntity<Resource> downloadGuestRecipe(@RequestBody RecipeDownloadRequest request) {
+        if (request == null || request.getRecipeMarkdown() == null || request.getRecipeMarkdown().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Resource resource = recipeFileService.getRecipeFileForGuest(request.getRecipeMarkdown());
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + id + ".txt")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe.txt")
+                .contentType(MediaType.TEXT_PLAIN)
                 .body(resource);
     }
 

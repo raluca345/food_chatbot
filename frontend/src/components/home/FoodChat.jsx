@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 
@@ -8,6 +8,7 @@ import "./FoodChat.css";
 import {
   rehypePlugins,
   markdownComponents,
+  markdownUrlTransform,
 } from "../../utils/sanitizeMarkdown";
 
 import {
@@ -15,8 +16,12 @@ import {
   sendMessageToConversation,
   loadConversation,
 } from "../../api/chatApi";
+import { registerGuestRecipeDownload } from "../../api/generationApi";
 
 import { getIdFromToken, getNameFromToken } from "../../utils/jwt";
+
+const MESSAGE_PAGE_SIZE = 20;
+const HISTORY_LOAD_THRESHOLD_PX = 120;
 
 function FoodChat() {
   const { conversationId } = useParams();
@@ -26,9 +31,15 @@ function FoodChat() {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [messagePage, setMessagePage] = useState(1);
+  const [messageTotal, setMessageTotal] = useState(0);
   const [lastMessageId, setLastMessageId] = useState(null);
 
   const outputRef = useRef(null);
+  const loadingHistoryRef = useRef(false);
+  const prependSnapshotRef = useRef(null);
+  const shouldScrollToBottomRef = useRef(false);
 
   const userName = useMemo(() => {
     const token = localStorage.getItem("token");
@@ -40,53 +51,124 @@ function FoodChat() {
     return token ? getIdFromToken(token) : null;
   }, []);
 
-  useEffect(() => {
-    if (!conversationId) return;
+  const mapPagedMessageBatch = useCallback(
+    (items) =>
+      [...items].reverse().map((m) => ({
+        id: m.id,
+        role: String(m.role || "").toLowerCase(),
+        content: m.content,
+      })),
+    []
+  );
 
-    async function load() {
-      try {
-        const convo = await loadConversation(conversationId);
-        setMessages(
-          convo.messages.map((m) => ({
-            id: m.id,
-            role: m.role.toLowerCase(),
-            content: m.content,
-          }))
-        );
-      } catch (e) {
-        console.error("Failed to load conversation", e);
+  const loadMessagePage = useCallback(
+    async ({ page, prepend }) => {
+      if (!conversationId) return;
+      if (loadingHistoryRef.current) return;
+
+      const container = outputRef.current;
+      if (prepend && container) {
+        prependSnapshotRef.current = {
+          scrollTop: container.scrollTop,
+          scrollHeight: container.scrollHeight,
+        };
       }
-    }
 
-    load();
-  }, [conversationId]);
+      loadingHistoryRef.current = true;
+      setLoadingHistory(true);
+      try {
+        const response = await loadConversation(conversationId, {
+          page,
+          pageSize: MESSAGE_PAGE_SIZE,
+        });
+        const normalizedBatch = mapPagedMessageBatch(response?.messages ?? []);
+
+        setMessages((prev) =>
+          prepend ? [...normalizedBatch, ...prev] : normalizedBatch
+        );
+        setMessagePage(page);
+        setMessageTotal(Number(response?.total) || 0);
+
+        if (!prepend) {
+          shouldScrollToBottomRef.current = true;
+        }
+      } catch (e) {
+        console.error("Failed to load conversation messages", e);
+      } finally {
+        loadingHistoryRef.current = false;
+        setLoadingHistory(false);
+      }
+    },
+    [conversationId, mapPagedMessageBatch]
+  );
 
   useEffect(() => {
     if (!conversationId) {
       setMessages([]);
       setLastMessageId(null);
       setLoading(false);
+      setLoadingHistory(false);
+      setMessagePage(1);
+      setMessageTotal(0);
+      loadingHistoryRef.current = false;
+      prependSnapshotRef.current = null;
+      shouldScrollToBottomRef.current = false;
+      return;
     }
-  }, [conversationId, location.pathname]);
 
-  useEffect(() => {
-    if (!outputRef.current) return;
-    outputRef.current.scrollTo({
-      top: outputRef.current.scrollHeight,
-      behavior: "smooth",
-    });
+    setMessages([]);
+    setLastMessageId(null);
+    setLoadingHistory(false);
+    setMessagePage(1);
+    setMessageTotal(0);
+    loadingHistoryRef.current = false;
+    prependSnapshotRef.current = null;
+    shouldScrollToBottomRef.current = false;
+
+    loadMessagePage({ page: 1, prepend: false });
+  }, [conversationId, location.pathname, loadMessagePage]);
+
+  useLayoutEffect(() => {
+    const container = outputRef.current;
+    if (!container) return;
+
+    if (prependSnapshotRef.current) {
+      const { scrollTop, scrollHeight } = prependSnapshotRef.current;
+      const grownBy = container.scrollHeight - scrollHeight;
+      container.scrollTop = scrollTop + grownBy;
+      prependSnapshotRef.current = null;
+      return;
+    }
+
+    if (shouldScrollToBottomRef.current) {
+      container.scrollTop = container.scrollHeight;
+      shouldScrollToBottomRef.current = false;
+    }
   }, [messages]);
+
+  const hasMoreHistory = messages.length < messageTotal;
+
+  const handleOutputScroll = () => {
+    const container = outputRef.current;
+    if (!container) return;
+    if (!conversationId || !hasMoreHistory || loadingHistoryRef.current) return;
+
+    if (container.scrollTop <= HISTORY_LOAD_THRESHOLD_PX) {
+      loadMessagePage({ page: messagePage + 1, prepend: true });
+    }
+  };
 
   const sendMessage = async () => {
     if (!prompt.trim() || loading) return;
 
     const userMsg = {
-      id: userId,
+      id: Date.now(),
       role: "user",
       content: prompt,
     };
 
     setMessages((m) => [...m, userMsg]);
+    shouldScrollToBottomRef.current = true;
     setPrompt("");
     setLoading(true);
 
@@ -102,13 +184,25 @@ function FoodChat() {
         response = await sendMessageToConversation(conversationId, prompt);
       }
 
+      let assistantContent = response.assistantMessage;
+      if (
+        !userId &&
+        looksLikeRecipe(assistantContent) &&
+        !/\[Download recipe]\([^)]+\)/i.test(assistantContent)
+      ) {
+        const recipeMarkdown = stripDownloadLine(assistantContent);
+        const guestHref = registerGuestRecipeDownload(recipeMarkdown);
+        assistantContent = `${recipeMarkdown}\n\nYou can download this recipe here: [Download recipe](${guestHref})`;
+      }
+
       const assistantMsg = {
         id: Date.now() + 1,
         role: "assistant",
-        content: response.assistantMessage,
+        content: assistantContent,
       };
 
       setMessages((m) => [...m, assistantMsg]);
+      shouldScrollToBottomRef.current = true;
       setLastMessageId(assistantMsg.id);
     } catch (err) {
       console.error(err);
@@ -121,9 +215,21 @@ function FoodChat() {
       };
 
       setMessages((m) => [...m, errorMsg]);
+      shouldScrollToBottomRef.current = true;
     } finally {
       setLoading(false);
     }
+  };
+
+  const stripDownloadLine = (text) =>
+    String(text || "").replace(
+      /\n\nYou can download this recipe here:\s*\[Download recipe]\([^)]+\)\s*$/i,
+      ""
+    );
+
+  const looksLikeRecipe = (text) => {
+    const normalized = String(text || "").toLowerCase();
+    return normalized.includes("ingredients") && normalized.includes("instructions");
   };
 
   useEffect(() => {
@@ -161,7 +267,10 @@ function FoodChat() {
       {loading && <Spinner />}
 
       <div className="output">
-        <div className="recipe-text" ref={outputRef}>
+        <div className="recipe-text" ref={outputRef} onScroll={handleOutputScroll}>
+          {loadingHistory && (
+            <div className="history-loading">Loading earlier messages...</div>
+          )}
           {messages.map((msg) => {
             let display = msg && msg.content ? msg.content : "";
             if (typeof display === "string") {
@@ -192,6 +301,7 @@ function FoodChat() {
                   <ReactMarkdown
                     rehypePlugins={rehypePlugins}
                     components={markdownComponents}
+                    urlTransform={markdownUrlTransform}
                   >
                     {display}
                   </ReactMarkdown>

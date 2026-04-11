@@ -7,13 +7,11 @@ import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.RecipeFileRepository;
 import org.ai.chatbot_backend.repository.UserRepository;
 import org.ai.chatbot_backend.service.interfaces.IRecipeFileService;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -32,21 +30,20 @@ public class RecipeFileService implements IRecipeFileService {
     }
 
     @Override
-    public Resource getRecipeFile(Long id) {
+    public Resource getRecipeFileForUser(Long id, Long userId) {
         RecipeFile recipeFile = recipeFileRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Recipe not found."));
-
-        String recipeText = recipeFile.getContent();
-
-        try {
-            File file = File.createTempFile("recipe-" + id + "-", ".txt");
-            try (FileWriter writer = new FileWriter(file)) {
-                writer.write(recipeText);
-            }
-            return new FileSystemResource(file);
-        } catch (IOException e) {
-            throw new RuntimeException("Error writing recipe file", e);
+        User owner = recipeFile.getUser();
+        if (owner.getId() != userId) {
+            throw new ResourceNotFoundException("Recipe not found.");
         }
+
+        return new ByteArrayResource(recipeFile.getContent().getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public Resource getRecipeFileForGuest(String recipeMarkdown) {
+        return new ByteArrayResource(recipeMarkdown.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override

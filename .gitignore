@@ -150,3 +150,7 @@ public/
 *.njsproj
 *.sln
 *.sw?
+
+backend/.m2/
+frontend/.env
+backend/target/

@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.dto.ImageContent;
 import org.ai.chatbot_backend.dto.ImageDto;
-import org.ai.chatbot_backend.dto.ImagePageDto;
+import org.ai.chatbot_backend.dto.PageResult;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.Image;
@@ -23,6 +23,9 @@ import org.springframework.ai.image.ImageResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -39,8 +42,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -194,39 +195,19 @@ public class ImageService implements IImageService {
     }
 
     @Override
-    public List<ImageDto> getAllImagesForUser(User user) {
-        return imageRepository.findByUserId(user.getId())
-                .stream()
-                .map(img -> {
-                    String signedUrl = r2Service.generateSignedUrl(img.getFilename());
-                    return new ImageDto(img.getId(), signedUrl, img.getFilename(), img.getCreatedAt());
-                })
-                .toList();
-    }
-
-    @Override
-    public ImagePageDto getImagesForUserPaged(User user, int page, int pageSize) {
+    public PageResult<ImageDto> getImages(User user, int page, int pageSize) {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 18;
 
-        List<ImageDto> images = getAllImagesForUser(user);
-        if (images == null || images.isEmpty()) {
-            return new ImagePageDto(List.copyOf(List.of()), 0);
-        }
+        Pageable pageable = PageRequest.of(page - 1, pageSize);
+        Page<Image> p = imageRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
 
-        List<ImageDto> sorted = new ArrayList<>(images);
-        sorted.sort(Comparator.comparing(ImageDto::getCreatedAt).reversed());
+        List<ImageDto> items = p.stream().map(img -> {
+            String signedUrl = r2Service.generateSignedUrl(img.getFilename());
+            return new ImageDto(img.getId(), signedUrl, img.getFilename(), img.getCreatedAt());
+        }).toList();
 
-        int total = sorted.size();
-        int start = (page - 1) * pageSize;
-        if (start >= total) {
-            return new ImagePageDto(List.copyOf(List.of()), total);
-        }
-        int end = Math.min(start + pageSize, total);
-        List<ImageDto> pageItems = new ArrayList<>(sorted.subList(start, end));
-        List<ImageDto> immutablePage = List.copyOf(pageItems);
-
-        return new ImagePageDto(immutablePage, total);
+        return new PageResult<>(List.copyOf(items), p.getTotalElements());
     }
 
     @Override

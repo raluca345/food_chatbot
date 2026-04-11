@@ -1,7 +1,8 @@
 package org.ai.chatbot_backend.service.interfaces;
 
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
-import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
+import org.ai.chatbot_backend.dto.PageResult;
+import org.ai.chatbot_backend.dto.RecipeHistoryDto;
 import org.ai.chatbot_backend.model.RecipeHistory;
 
 import java.util.List;
@@ -13,5 +14,5 @@ public interface IRecipeHistoryService {
     void deleteFromHistory(Long userId, Long entryId);
     Optional<RecipeHistory> findById(Long id);
 
-    RecipeHistoryPageDto getHistoryForUserPaged(Long userId, int page, int pageSize);
+    PageResult<RecipeHistoryDto> getHistoryForUserPaged(Long userId, int page, int pageSize);
 }

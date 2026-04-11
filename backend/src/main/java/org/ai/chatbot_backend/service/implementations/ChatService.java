@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.AssistantMessageDto;
 import org.ai.chatbot_backend.dto.ConversationDto;
 import org.ai.chatbot_backend.dto.MessageDto;
+import org.ai.chatbot_backend.dto.PageResult;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.Conversation;
@@ -15,6 +16,7 @@ import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.service.interfaces.IChatService;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -87,8 +89,12 @@ public class ChatService implements IChatService {
     }
 
     @Override
-    public String createDownloadableRecipe(String recipeText) {
+    public String createDownloadableRecipe(String recipeText, Long userId) {
+        if (userId == null) {
+            return "";
+        }
         Long id = recipeFileService.storeRecipeText(recipeText);
+        recipeFileService.attachFileToUser(id, userId);
         return recipeFileService.getDownloadMarkdown(id, backendBaseUrl);
     }
 
@@ -100,7 +106,7 @@ public class ChatService implements IChatService {
         conversation.setTitle(conversationService.createTitle(chatModel, userMessage));
         log.info(conversation.getTitle());
 
-        String assistantReply = getResponse(userMessage);
+        String assistantReply = getResponse(userMessage, user.getId());
 
         messageService.createAssistantMessage(assistantReply, conversation);
 
@@ -113,13 +119,13 @@ public class ChatService implements IChatService {
     @Override
     public AssistantMessageDto createGuestConversation(String message) {
 
-        String reply = getResponse(message);
+        String reply = getResponse(message, null);
 
         return new AssistantMessageDto(null, reply);
     }
 
     @Override
-    public ConversationDto loadConversation(User user, long conversationId) {
+    public PageResult<MessageDto> loadConversation(User user, long conversationId, int page, int pageSize) {
 
         if (user == null) {
             throw new ResourceNotFoundException("User not found");
@@ -131,35 +137,18 @@ public class ChatService implements IChatService {
             throw new AccessDeniedException("Conversation does not belong to user");
         }
 
-        List<MessageDto> messageDtos = conversation.getMessages()
-                .stream()
-                .sorted(Comparator.comparing(Message::getTimestamp))
-                .map(m -> new MessageDto(
-                        m.getId(),
-                        m.getRole().name(),
-                        m.getContent(),
-                        m.getTimestamp()
-                ))
-                .toList();
-
-        return new ConversationDto(
-                conversation.getId(),
-                conversation.getTitle(),
-                messageDtos
-        );
+        return messageService.getMessagesForConversationPaged(conversationId, page, pageSize);
     }
 
     @Override
-    public List<ConversationDto> loadConversations(User user) {
+    public PageResult<ConversationDto> loadConversations(User user, int page, int pageSize) {
         if (user == null) {
             throw new ResourceNotFoundException("User not found");
         }
 
-        List<Conversation> conversations = conversationService.findByUser(user);
-
-        return conversations
+        Page<Conversation> conversations = conversationService.findByUser(user, page, pageSize);
+        List<ConversationDto> items = conversations
                 .stream()
-                .sorted(Comparator.comparing(Conversation::getUpdatedAt, Comparator.reverseOrder()))
                 .map(c -> new ConversationDto(
                                 c.getId(),
                                 c.getTitle(),
@@ -173,6 +162,7 @@ public class ChatService implements IChatService {
                                         ).toList()
                         )
                 ).toList();
+        return new PageResult<>(items, conversations.getTotalElements());
     }
 
     @Override
@@ -224,7 +214,7 @@ public class ChatService implements IChatService {
             throw new AccessDeniedException("Conversation does not belong to user");
         }
 
-        String assistantReply = getResponse(userMessage);
+        String assistantReply = getResponse(userMessage, user.getId());
 
         messageService.createUserMessage(userMessage, conversation);
         messageService.createAssistantMessage(assistantReply, conversation);
@@ -235,20 +225,25 @@ public class ChatService implements IChatService {
         );
     }
 
-
-    @Override
-    public String getResponse(String userPrompt) {
+    private String getResponse(String userPrompt, Long userId) {
         String fullPrompt = systemPrompt() + "\nUser: " + userPrompt;
         try {
             String modelOut = chatModel.call(fullPrompt);
             if (looksLikeRecipe(modelOut)) {
-                String mdLink = createDownloadableRecipe(modelOut);
-                modelOut = modelOut + "\n\nYou can download this recipe here: " + mdLink;
+                String mdLink = createDownloadableRecipe(modelOut, userId);
+                if (!mdLink.isBlank()) {
+                    modelOut = modelOut + "\n\nYou can download this recipe here: " + mdLink;
+                }
             }
             return modelOut;
         } catch (HttpResponseException e) {
             throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
         }
+    }
+
+    @Override
+    public String getResponse(String userPrompt) {
+        return getResponse(userPrompt, null);
     }
 
 }
