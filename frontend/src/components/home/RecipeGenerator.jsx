@@ -4,10 +4,11 @@ import ReactMarkdown from "react-markdown";
 import {
   rehypePlugins,
   markdownComponents,
+  markdownUrlTransform,
 } from "../../utils/sanitizeMarkdown";
 import "./RecipeGenerator.css";
 
-import { generateRecipe } from "../../api/generationApi";
+import { generateRecipe, registerGuestRecipeDownload } from "../../api/generationApi";
 
 function RecipeGenerator() {
   const [params, setParams] = useState({
@@ -27,7 +28,12 @@ function RecipeGenerator() {
     setLoading(true);
     try {
       const recipeResult = await generateRecipe(params);
-      const recipeTxt = recipeResult?.fullText || recipeResult?.recipeMarkdown || "";
+      let recipeTxt = recipeResult?.fullText || recipeResult?.recipeMarkdown || "";
+      const isGuestRecipe = !recipeResult?.fileId && !!recipeResult?.recipeMarkdown;
+      if (isGuestRecipe) {
+        const guestHref = registerGuestRecipeDownload(recipeResult.recipeMarkdown);
+        recipeTxt = `${recipeResult.recipeMarkdown}\n\nYou can download this recipe here: [Download recipe](${guestHref})`;
+      }
       setRecipe(recipeTxt);
     } catch (err) {
       console.error("Error generating recipe:", err);
@@ -74,6 +80,7 @@ function RecipeGenerator() {
           <ReactMarkdown
             rehypePlugins={rehypePlugins}
             components={markdownComponents}
+            urlTransform={markdownUrlTransform}
           >
             {recipe}
           </ReactMarkdown>

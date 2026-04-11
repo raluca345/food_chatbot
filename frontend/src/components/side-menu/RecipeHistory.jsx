@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import {
   rehypePlugins,
   markdownComponents,
+  markdownUrlTransform,
 } from "../../utils/sanitizeMarkdown";
 import {
   getUserRecipeHistory,
@@ -218,12 +219,13 @@ export default function RecipeHistory() {
               className={`panel ${expandedIndex === index ? "open" : ""}`}
               aria-hidden={expandedIndex !== index}
             >
-              <ReactMarkdown
-                rehypePlugins={rehypePlugins}
-                components={markdownComponents}
-              >
-                {entry.content}
-              </ReactMarkdown>
+                      <ReactMarkdown
+                        rehypePlugins={rehypePlugins}
+                        components={markdownComponents}
+                        urlTransform={markdownUrlTransform}
+                      >
+                        {entry.content}
+                      </ReactMarkdown>
             </div>
           </li>
         ))}
