@@ -1,6 +1,7 @@
 package org.ai.chatbot_backend.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.PasswordDto;
 import org.ai.chatbot_backend.email.EmailDetails;
 import org.ai.chatbot_backend.email.EmailService;
@@ -17,9 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-
 @RestController
+@Slf4j
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = "http://localhost:5173")
@@ -39,9 +39,19 @@ public class PasswordResetController {
             User user = userService.findUserByEmail(emailDetails.getRecipient());
             if (user != null) {
                 PasswordResetToken prt = userService.generatePasswordResetTokenForUser(user);
-                emailService.sendPasswordResetEmail(emailDetails, prt);
+                boolean sent = emailService.sendPasswordResetEmail(emailDetails, prt);
+                if (!sent) {
+                    log.error("Password reset email send returned false for recipient {}", emailDetails.getRecipient());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Email failed to send");
+                }
             }
-        } catch (Exception ignored) {
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.accepted().build();
+        } catch (Exception e) {
+            log.error("Password reset request failed for recipient {}", emailDetails.getRecipient(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Email failed to send");
         }
         return ResponseEntity.accepted().build();
     }
@@ -66,10 +76,7 @@ public class PasswordResetController {
     public ResponseEntity<?> changePassword(@RequestBody PasswordDto newPassword) {
         try {
             passwordResetWorkflowService.resetPassword(newPassword.getToken(), newPassword.getPassword());
-            //sending 303 to prevent form resubmission
-            return ResponseEntity.status(HttpStatus.SEE_OTHER)
-                    .location(URI.create(FRONTEND_BASE_URL + "/login"))
-                    .build();
+            return ResponseEntity.noContent().build();
         } catch (PasswordResetTokenExpiredException e) {
             return ResponseEntity.status(HttpStatus.GONE).body(e.getMessage());
         }  catch (ResourceNotFoundException e) {

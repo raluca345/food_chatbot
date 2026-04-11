@@ -35,6 +35,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -136,6 +137,31 @@ public class PasswordResetControllerTest {
                     .andExpect(status().isAccepted());
 
             verify(emailService, times(0)).sendPasswordResetEmail(any(), any());
+        }
+
+        @Test
+        void whenEmailSendFails_thenReturnInternalServerError() throws Exception {
+            User mockUser = mockUser();
+            PasswordResetToken passwordResetToken = new PasswordResetToken(1L, "123", mockUser,
+                    Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
+
+            EmailDetails emailDetails = new EmailDetails();
+            emailDetails.setSubject("Password reset link");
+            emailDetails.setRecipient(mockUser.getEmail());
+            emailDetails.setMsgBody("Reset your password");
+
+            String json = mapper.writeValueAsString(emailDetails);
+
+            when(userService.findUserByEmail(mockUser.getEmail())).thenReturn(mockUser);
+            when(userService.generatePasswordResetTokenForUser(mockUser)).thenReturn(passwordResetToken);
+            when(emailService.sendPasswordResetEmail(any(), any())).thenReturn(false);
+
+            mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json)
+                            .with(csrf()))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(content().string("Email failed to send"));
         }
     }
 
@@ -243,7 +269,8 @@ public class PasswordResetControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json)
                             .with(csrf()))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(content().string("Internal server error"));
 
             verify(passwordResetWorkflowService, times(1)).resetPassword(dto.getToken(), dto.getPassword());
         }

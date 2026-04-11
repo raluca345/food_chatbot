@@ -35,16 +35,19 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/password-reset/request",
                                 "/api/v1/auth/password-reset/verify",
-                                "/api/v1/auth/password-reset/confirm"
+                                "/api/v1/auth/password-reset/confirm",
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/login",
+                                "/api/v1/chat/guest",
+                                "/api/v1/recipes/download/guest"
                         ).anonymous()
-                        .requestMatchers("/api/v1/auth/register").permitAll()
-                        .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/chat/**").permitAll()
-                        .requestMatchers("/api/v1/recipes/download/**").permitAll()
+                        .requestMatchers("/api/v1/chat/**").authenticated()
+                        .requestMatchers("/api/v1/recipes/download/**").authenticated()
+                        .requestMatchers("/api/v1/recipes").permitAll()
                         .requestMatchers("/api/v1/food-images/**").permitAll()
                         .requestMatchers("/api/v1/users/me/**").authenticated()
                         .requestMatchers("/api/v1/recipes/history/**").authenticated()
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {

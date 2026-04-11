@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken,Long> {
     PasswordResetToken findByToken(String token);
+    Optional<PasswordResetToken> findByUserId(Long userId);
 
     @Query("SELECT t.user.id FROM PasswordResetToken t WHERE t.token = :token")
     Optional<Long> findUserIdByToken(@Param("token") String token);

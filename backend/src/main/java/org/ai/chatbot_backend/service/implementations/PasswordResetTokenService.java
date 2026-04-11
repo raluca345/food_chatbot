@@ -23,11 +23,10 @@ public class PasswordResetTokenService implements IPasswordResetTokenService {
     @Override
     public PasswordResetToken saveToken(User user, String token) {
         Date expirationDate = Date.from(Instant.now().plus(1, ChronoUnit.HOURS));
-        PasswordResetToken passwordResetToken = PasswordResetToken.builder()
-                .user(user)
-                .token(token)
-                .expiryDate(expirationDate)
-                .build();
+        PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByUserId(user.getId())
+                .orElseGet(() -> PasswordResetToken.builder().user(user).build());
+        passwordResetToken.setToken(token);
+        passwordResetToken.setExpiryDate(expirationDate);
 
         return passwordResetTokenRepository.save(passwordResetToken);
     }

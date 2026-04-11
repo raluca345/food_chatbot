@@ -1,12 +1,14 @@
 package org.ai.chatbot_backend.email;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.model.PasswordResetToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService implements IEmailService {
@@ -30,6 +32,7 @@ public class EmailService implements IEmailService {
             mailSender.send(message);
             return true;
         } catch (Exception e) {
+            log.error("Failed to send simple email to {}", details.getRecipient(), e);
             return false;
         }
     }
@@ -48,6 +51,7 @@ public class EmailService implements IEmailService {
             mailSender.send(message);
             return true;
         } catch (Exception e) {
+            log.error("Failed to send password reset email to {}", details.getRecipient(), e);
             return false;
         }
     }
