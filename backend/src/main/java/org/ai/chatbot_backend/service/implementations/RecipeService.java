@@ -2,6 +2,7 @@ package org.ai.chatbot_backend.service.implementations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.azure.core.exception.HttpResponseException;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.RecipeResponse;
@@ -109,7 +110,7 @@ public class RecipeService implements IRecipeService {
     }
 
     @Override
-    public CreateRecipeResult createRecipe(RecipeRequest request) {
+    public CreateRecipeResult createRecipe(RecipeRequest request, Long userId) {
         if (request == null) {
             throw new InappropriateRequestRefusalException("Ingredients are required");
         }
@@ -146,10 +147,19 @@ public class RecipeService implements IRecipeService {
                 );
             }
 
-            Long id = recipeFileService.storeRecipeText(recipeResponse.getRecipeMarkdown());
-            String downloadUrl = recipeFileService.getDownloadMarkdown(id, backendBaseUrl);
+            Long id = null;
+            String downloadUrl = null;
+            if (userId != null) {
+                id = recipeFileService.storeRecipeText(recipeResponse.getRecipeMarkdown());
+                recipeFileService.attachFileToUser(id, userId);
+                downloadUrl = recipeFileService.getDownloadMarkdown(id, backendBaseUrl);
+            }
 
             return new CreateRecipeResult(recipeResponse.getRecipeMarkdown(), id, downloadUrl);
+        } catch (HttpResponseException e) {
+            throw new InappropriateRequestRefusalException(
+                    "I'm sorry, but I can't assist with that request."
+            );
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to parse recipe JSON: " + e.getMessage(), e);
         }

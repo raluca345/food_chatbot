@@ -40,7 +40,7 @@ public class RecipeServiceIntegrationTests {
     }, delimiter = ';')
     public void whenGivenValidParams_thenReturnRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
         CreateRecipeResult result = recipeService.createRecipe(
-                recipeRequest(ingredients, cuisine, dietaryRestrictions));
+                recipeRequest(ingredients, cuisine, dietaryRestrictions), null);
         String recipe = result.getRecipeMarkdown();
         log.info(recipe);
 
@@ -60,7 +60,7 @@ public class RecipeServiceIntegrationTests {
     }, delimiter = ';')
     public void whenGivenInvalidParams_thenPointItOut(String ingredients, String cuisine, String dietaryRestrictions) {
         assertThatThrownBy(() -> recipeService.createRecipe(
-                recipeRequest(ingredients, cuisine, dietaryRestrictions)))
+                recipeRequest(ingredients, cuisine, dietaryRestrictions), null))
                 .isInstanceOf(InappropriateRequestRefusalException.class);
     }
 
@@ -76,7 +76,7 @@ public class RecipeServiceIntegrationTests {
     }, delimiter = ';')
     public void whenGivenForbiddenParams_thenRefuseToGenerateRecipe(String ingredients, String cuisine, String dietaryRestrictions) {
         assertThatThrownBy(() -> recipeService.createRecipe(
-                recipeRequest(ingredients, cuisine, dietaryRestrictions)))
+                recipeRequest(ingredients, cuisine, dietaryRestrictions), null))
                 .isInstanceOf(InappropriateRequestRefusalException.class);
     }
 }

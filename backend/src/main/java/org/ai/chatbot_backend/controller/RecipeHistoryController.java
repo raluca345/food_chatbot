@@ -1,7 +1,8 @@
 package org.ai.chatbot_backend.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.ai.chatbot_backend.dto.RecipeHistoryPageDto;
+import org.ai.chatbot_backend.dto.PageResult;
+import org.ai.chatbot_backend.dto.RecipeHistoryDto;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.RecipeHistory;
 import org.ai.chatbot_backend.model.RecipeFile;
@@ -36,7 +37,7 @@ public class RecipeHistoryController {
         }
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
-        RecipeHistoryPageDto pageDto = recipeHistoryService.getHistoryForUserPaged(user.getId(), page, pageSize);
+        PageResult<RecipeHistoryDto> pageDto = recipeHistoryService.getHistoryForUserPaged(user.getId(), page, pageSize);
         return ResponseEntity.ok(pageDto);
     }
 
@@ -52,7 +53,7 @@ public class RecipeHistoryController {
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("History entry not found");
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -64,19 +65,25 @@ public class RecipeHistoryController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
-        RecipeHistory entry = recipeHistoryService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("History entry not found"));
+        RecipeHistory entry = recipeHistoryService.findById(id).orElse(null);
+        if (entry == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("History entry not found");
+        }
         if (entry.getUser() == null || entry.getUser().getId() != user.getId()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Forbidden");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("History entry not found");
         }
         RecipeFile file = entry.getRecipeFile();
         if (file == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Recipe file not found");
         }
         Long fileId = file.getId();
-        Resource resource = recipeFileService.getRecipeFile(fileId);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + fileId + ".txt")
-                .body(resource);
+        try {
+            Resource resource = recipeFileService.getRecipeFileForUser(fileId, user.getId());
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + fileId + ".txt")
+                    .body(resource);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Recipe file not found");
+        }
     }
 }
