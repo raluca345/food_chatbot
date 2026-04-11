@@ -10,12 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -27,6 +29,9 @@ class ConversationAuthorizationWebMvcTest {
 
     @MockitoBean
     private ChatService chatService;
+
+    @MockitoBean
+    private ConversationService conversationService;
 
     @MockitoBean
     private ImageService imageService;
@@ -47,6 +52,7 @@ class ConversationAuthorizationWebMvcTest {
     private JwtService jwtService;
 
     @Test
+    @WithMockUser(username = "user@example.com")
     void patchRenameConversation_whenConversationNotOwned_thenForbidden() throws Exception {
         long conversationId = 10L;
 
@@ -57,12 +63,13 @@ class ConversationAuthorizationWebMvcTest {
         when(chatService.renameConversation(eq(user), eq(conversationId), eq("new title")))
                 .thenThrow(new AccessDeniedException("Conversation does not belong to user"));
 
-        mockMvc.perform(
+                mockMvc.perform(
                         patch("/api/v1/chat/{conversationId}", conversationId)
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"title\":\"new title\"}")
                 )
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -71,11 +78,12 @@ class ConversationAuthorizationWebMvcTest {
 
         when(authHelper.getAuthenticatedUserOrNull(any())).thenReturn(null);
 
-        mockMvc.perform(
+                mockMvc.perform(
                         patch("/api/v1/chat/{conversationId}", conversationId)
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"title\":\"new title\"}")
                 )
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

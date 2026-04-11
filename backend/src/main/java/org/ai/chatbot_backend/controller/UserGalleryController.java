@@ -3,7 +3,8 @@ package org.ai.chatbot_backend.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.ImageContent;
-import org.ai.chatbot_backend.dto.ImagePageDto;
+import org.ai.chatbot_backend.dto.ImageDto;
+import org.ai.chatbot_backend.dto.PageResult;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.security.AuthHelper;
@@ -27,7 +28,7 @@ public class UserGalleryController {
     private final AuthHelper authHelper;
 
     @GetMapping("/me/images")
-    public ResponseEntity<ImagePageDto> getMyImages(Authentication authentication,
+    public ResponseEntity<PageResult<ImageDto>> getMyImages(Authentication authentication,
                                         @RequestParam(defaultValue = "1") int page,
                                         @RequestParam(defaultValue = "18") int pageSize) {
 
@@ -35,7 +36,7 @@ public class UserGalleryController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        ImagePageDto pageDto = imageService.getImagesForUserPaged(user, page, pageSize);
+        PageResult<ImageDto> pageDto = imageService.getImages(user, page, pageSize);
         return ResponseEntity.ok(pageDto);
     }
 
@@ -52,10 +53,8 @@ public class UserGalleryController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + content.filename() + "\"")
                     .contentType(mediaType)
                     .body(content.resource());
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException | AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         } catch (RuntimeException e) {
             log.error("Failed to download image {}", imageId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -75,7 +74,7 @@ public class UserGalleryController {
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Image not found");
         }
     }
 
