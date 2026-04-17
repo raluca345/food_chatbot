@@ -13,9 +13,6 @@ import org.ai.chatbot_backend.dto.PageResult;
 import org.ai.chatbot_backend.dto.RecipeDownloadRequest;
 import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.dto.UpdateTitleRequest;
-import org.ai.chatbot_backend.exception.EmptyTitleException;
-import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
-import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.Conversation;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.security.AuthHelper;
@@ -25,7 +22,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,24 +49,16 @@ public class GenAIController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            AssistantMessageDto response = chatService.createAndSaveConversation(user, request.getMessage());
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        AssistantMessageDto response = chatService.createAndSaveConversation(user, request.getMessage());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/chat/guest")
     public ResponseEntity<AssistantMessageDto> startGuestConversation(
             @RequestBody ChatMessageRequest request
     ) {
-        try {
-            AssistantMessageDto response = chatService.createGuestConversation(request.getMessage());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        AssistantMessageDto response = chatService.createGuestConversation(request.getMessage());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/chat/{conversationId}/messages")
@@ -84,14 +72,8 @@ public class GenAIController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            AssistantMessageDto response = chatService.chat(user, request.getMessage(), conversationId);
-            return ResponseEntity.ok(response);
-        } catch (ResourceNotFoundException | AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (InappropriateRequestRefusalException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        AssistantMessageDto response = chatService.chat(user, request.getMessage(), conversationId);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/chat/{conversationId}")
@@ -106,21 +88,15 @@ public class GenAIController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            PageResult<MessageDto> conversation = chatService.loadConversation(user, conversationId, page, pageSize);
-            Conversation conversationEntity = conversationService.findById(conversationId);
-            ConversationDto body = new ConversationDto(
-                    conversationId,
-                    conversationEntity.getTitle(),
-                    conversation.getItems(),
-                    conversation.getTotal()
-            );
-            return ResponseEntity.ok(body);
-
-        } catch (ResourceNotFoundException | AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-
-        }
+        PageResult<MessageDto> conversation = chatService.loadConversation(user, conversationId, page, pageSize);
+        Conversation conversationEntity = conversationService.findById(conversationId);
+        ConversationDto body = new ConversationDto(
+                conversationId,
+                conversationEntity.getTitle(),
+                conversation.getItems(),
+                conversation.getTotal()
+        );
+        return ResponseEntity.ok(body);
     }
 
     @GetMapping("/chat")
@@ -133,16 +109,8 @@ public class GenAIController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            PageResult<ConversationDto> conversation =
-                    chatService.loadConversations(user, page, pageSize);
-
-            return ResponseEntity.ok(conversation);
-
-        } catch (ResourceNotFoundException | AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-
-        }
+        PageResult<ConversationDto> conversation = chatService.loadConversations(user, page, pageSize);
+        return ResponseEntity.ok(conversation);
     }
 
     @PatchMapping(path = "/chat/{conversationId}", consumes = "application/json", produces = "application/json")
@@ -154,16 +122,8 @@ public class GenAIController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            ConversationDto conversation = chatService.renameConversation(user, conversationId, request.getTitle());
-
-            return ResponseEntity.ok(conversation);
-        } catch (ResourceNotFoundException | AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-
-        } catch (EmptyTitleException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        ConversationDto conversation = chatService.renameConversation(user, conversationId, request.getTitle());
+        return ResponseEntity.ok(conversation);
     }
 
 
@@ -175,33 +135,20 @@ public class GenAIController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            chatService.deleteConversation(user, conversationId);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Conversation has been deleted");
-        } catch (ResourceNotFoundException | AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        chatService.deleteConversation(user, conversationId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Conversation has been deleted");
     }
 
 
     @PostMapping("/recipes")
     public ResponseEntity<?> generateRecipe(@RequestBody RecipeRequest request,
                                             Authentication authentication) {
-        try {
-            User user = authHelper.getAuthenticatedUserOrNull(authentication);
-            CreateRecipeResult result = recipeService.createRecipe(request, user != null ? user.getId() : null);
-            if (user != null) {
-                recipeHistoryService.saveGeneratedRecipe(user.getId(), result);
-            }
-            return ResponseEntity.ok(result);
-        } catch (InappropriateRequestRefusalException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (RuntimeException e) {
-            log.error("Recipe generation failed", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        User user = authHelper.getAuthenticatedUserOrNull(authentication);
+        CreateRecipeResult result = recipeService.createRecipe(request, user != null ? user.getId() : null);
+        if (user != null) {
+            recipeHistoryService.saveGeneratedRecipe(user.getId(), result);
         }
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/recipes/download/{id}")
@@ -211,15 +158,11 @@ public class GenAIController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            Resource resource = recipeFileService.getRecipeFileForUser(id, user.getId());
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + id + ".txt")
-                    .contentType(MediaType.TEXT_PLAIN)
-                    .body(resource);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        Resource resource = recipeFileService.getRecipeFileForUser(id, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + id + ".txt")
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(resource);
     }
 
     @PostMapping("/recipes/download/guest")
@@ -240,22 +183,13 @@ public class GenAIController {
     public ResponseEntity<?> generateFoodImage(
             @RequestBody FoodImageRequest request,
             Authentication authentication
-    ) {
-        try {
-            String tempImageUrl = imageService.generateFoodImageFromParams(request);
-            if (tempImageUrl.isEmpty()) {
-                throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
-            }
-            log.info(tempImageUrl);
-            User user = authHelper.getAuthenticatedUserOrNull(authentication);
-            if (user != null) {
-                ImageDto generatedImage = imageService.persistImageForUser(tempImageUrl, user.getId());
-                log.info(generatedImage.getUrl());
-                return ResponseEntity.ok(generatedImage);
-            }
-            return ResponseEntity.ok(new ImageDto(0L, tempImageUrl, null, null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    ) throws Exception {
+        String tempImageUrl = imageService.generateFoodImageFromParams(request);
+        User user = authHelper.getAuthenticatedUserOrNull(authentication);
+        if (user != null) {
+            ImageDto generatedImage = imageService.persistImageForUser(tempImageUrl, user.getId());
+            return ResponseEntity.ok(generatedImage);
         }
+        return ResponseEntity.ok(new ImageDto(0L, tempImageUrl, null, null));
     }
 }

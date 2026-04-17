@@ -1,15 +1,11 @@
 package org.ai.chatbot_backend.integration;
 
-import com.openai.errors.OpenAIException;
 import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.ai.image.Image;
-import org.springframework.ai.image.ImageGeneration;
-import org.springframework.ai.image.ImageModel;
-import org.springframework.ai.image.ImageResponse;
+import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,6 +15,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.List;
+import java.util.Map;
+
 @SpringBootTest
 public class ImageServiceIntegrationTests {
 
@@ -26,7 +25,7 @@ public class ImageServiceIntegrationTests {
     ImageService imageService;
 
     @MockitoBean
-    private ImageModel imageModel;
+    private RestClient restClient;
 
     @ParameterizedTest
     @CsvSource(value = {
@@ -36,14 +35,22 @@ public class ImageServiceIntegrationTests {
     }, delimiter = ';', nullValues = "null")
     public void whenGivenValidParams_thenReturnImage(String name, String course, String ingredients, String dishType,
                                                         String style, String size) {
-        ImageResponse response = mock(ImageResponse.class);
-        ImageGeneration generation = mock(ImageGeneration.class);
-        Image output = mock(Image.class);
-        when(response.getResults()).thenReturn(java.util.List.of(generation));
-        when(response.getResult()).thenReturn(generation);
-        when(generation.getOutput()).thenReturn(output);
-        when(output.getUrl()).thenReturn("https://dalleprodsec.blob.core.windows.net/mock.png");
-        when(imageModel.call(any())).thenReturn(response);
+        Map<String, Object> mockResponse = Map.of(
+                "data", List.of(
+                        Map.of("url", "https://example.com/generated-image.png")
+                )
+        );
+
+        RestClient.RequestBodyUriSpec requestBodyUriSpec = mock(RestClient.RequestBodyUriSpec.class);
+        RestClient.RequestBodySpec requestBodySpec = mock(RestClient.RequestBodySpec.class);
+        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
+
+        when(restClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(Map.class)).thenReturn(mockResponse);
 
         FoodImageRequest request = new FoodImageRequest();
         request.setName(name);
@@ -56,7 +63,7 @@ public class ImageServiceIntegrationTests {
         String imageUrl = imageService.generateFoodImageFromParams(request);
         assertThat(imageUrl).isNotNull();
         assertThat(imageUrl).isInstanceOf(String.class);
-        assertThat(imageUrl).startsWith("https://dalleprodsec.blob.core.");
+        assertThat(imageUrl).startsWith("https://");
     }
 
     @ParameterizedTest
@@ -74,7 +81,19 @@ public class ImageServiceIntegrationTests {
     }, nullValues = "null")
     public void whenGivenForbiddenParams_thenRefuseToGenerateImage(String name, String course, String ingredients,
                                                                    String dishType, String style, String size) {
-        when(imageModel.call(any())).thenThrow(new OpenAIException("Provider refused"));
+        Map<String, Object> emptyResponse = Map.of("data", List.of());
+
+        RestClient.RequestBodyUriSpec requestBodyUriSpec = mock(RestClient.RequestBodyUriSpec.class);
+        RestClient.RequestBodySpec requestBodySpec = mock(RestClient.RequestBodySpec.class);
+        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
+
+        when(restClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(Map.class)).thenReturn(emptyResponse);
+
         FoodImageRequest request = new FoodImageRequest();
         request.setName(name);
         request.setCourse(course);
@@ -88,3 +107,5 @@ public class ImageServiceIntegrationTests {
         ).isInstanceOf(InappropriateRequestRefusalException.class);
     }
 }
+
+

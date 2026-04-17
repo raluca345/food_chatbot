@@ -168,7 +168,8 @@ public class ImageService implements IImageService {
 
         if (result.containsKey("b64_json")) {
             String base64 = result.get("b64_json");
-            return handleBase64ImageResponse(base64);
+            // return as data uri, don't persist to R2 yet, that happens in persistImageForUser
+            return "data:image/png;base64," + base64;
         }
 
         if (result.containsKey("url")) {
@@ -198,10 +199,18 @@ public class ImageService implements IImageService {
     }
 
     public ImageDto persistImageForUser(String tempUrl, Long userId) throws Exception {
-
         Path tempFile = Files.createTempFile("img-", ".png");
-        try (InputStream in = new URI(tempUrl).toURL().openStream()) {
-            Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
+
+        // handle data uri (from image generation)
+        if (tempUrl.startsWith("data:image")) {
+            String base64 = tempUrl.substring(tempUrl.indexOf(",") + 1);
+            byte[] imageBytes = Base64.getDecoder().decode(base64);
+            Files.write(tempFile, imageBytes);
+        } else {
+            // handle regular url
+            try (InputStream in = new URI(tempUrl).toURL().openStream()) {
+                Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
         }
 
         String filename = "users/" + userId + "/images/" + UUID.randomUUID() + ".png";
@@ -317,28 +326,6 @@ public class ImageService implements IImageService {
         }
     }
 
-    private String handleBase64ImageResponse(String base64Data) throws Exception {
-        byte[] imageBytes = Base64.getDecoder().decode(base64Data);
-
-        Path tempFile = Files.createTempFile("img-", ".png");
-        Files.write(tempFile, imageBytes);
-
-        try {
-            String filename = "temp/" + UUID.randomUUID() + ".png";
-            r2Client.putObject(
-                    PutObjectRequest.builder()
-                            .bucket(bucket)
-                            .key(filename)
-                            .contentType("image/png")
-                            .build(),
-                    tempFile
-            );
-
-            return r2Service.generateSignedUrl(filename);
-        } finally {
-            Files.deleteIfExists(tempFile);
-        }
-    }
 
 }
 

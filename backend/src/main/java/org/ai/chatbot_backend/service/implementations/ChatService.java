@@ -41,25 +41,42 @@ public class ChatService implements IChatService {
     @Value("${app.backend-base-url}")
     private String backendBaseUrl;
 
-    @Override
-    public String systemPrompt() {
-        return """
-                You are a helpful assistant that only answers questions about food, recipes, ingredients, and cooking. \
-                Important rules: \
-                1) Do NOT invent or include any download links or URLs. \
-                2) Do NOT mention internal IDs (recipe id, database id, file id) or placeholders. \
-                3) If you provide a recipe, output ONLY the recipe in markdown using this strict format: \
+  @Override
+  public String systemPrompt() {
+    return """
+                You are a helpful assistant that answers questions about food, recipes, ingredients, and cooking.
+
+                IMPORTANT INSTRUCTIONS:
+
+                1) ANSWER SIMPLE FOOD QUESTIONS DIRECTLY:
+                   - "What is pizza?" → Answer what pizza is, its history, variations, etc.
+                   - "What are the benefits of tomatoes?" → Answer about nutritional benefits.
+                   - "Can cats eat pizza?" → Answer yes/no with brief explanation.
+                   DO NOT turn these into recipes unless explicitly asked.
+
+                2) ONLY GENERATE FULL RECIPES when:
+                   - User explicitly asks "How do I make..." or "Recipe for..."
+                   - User asks "What is [food]?" AND you choose to provide the recipe format
+                   When providing a recipe, use ONLY this strict markdown format with NO extra text before or after:
                    ### <Title>
-                
-                #### Ingredients:
-                - ...
-                
-                #### Instructions:
-                1. ... \
-                No extra commentary before or after the recipe. \
-                If the user asks to download/save/export, just acknowledge; the backend will generate and append the download link. \
-                If the question is not about food, politely respond: 'Sorry, I can only answer questions about food.'""";
-    }
+
+                   #### Ingredients:
+                   - ingredient 1
+                   - ingredient 2
+
+                   #### Instructions:
+                   1. step 1
+                   2. step 2
+
+                3) REFUSALS:
+                   - If question is NOT about food: respond only with "Sorry, I can only answer questions about food."
+                   - Do NOT invent or include any download links or URLs
+                   - Do NOT mention internal IDs or database references
+
+                4) DOWNLOAD LINKS:
+                   - Backend will append download link automatically if you provide a recipe
+                   - Do NOT add it yourself""";
+        }
 
     @Override
     public boolean looksLikeRecipe(String text) {
@@ -67,12 +84,13 @@ public class ChatService implements IChatService {
             return false;
         }
 
-        if (text.toLowerCase().contains("i cannot") ||
-                text.toLowerCase().contains("i'm sorry") ||
-                text.toLowerCase().contains("unable to") ||
-                text.toLowerCase().contains("clarify") ||
-                text.toLowerCase().contains("illegal") ||
-                text.toLowerCase().contains("inappropriate")) {
+        String lower = text.toLowerCase();
+        if (lower.contains("sorry") ||
+                lower.contains("i cannot") ||
+                lower.contains("unable to") ||
+                lower.contains("illegal") ||
+                lower.contains("inappropriate") ||
+                lower.startsWith("i can only answer")) {
             return false;
         }
 
@@ -80,12 +98,11 @@ public class ChatService implements IChatService {
             return true;
         }
 
-        String lower = text.toLowerCase();
         boolean hasTitle = text.trim().startsWith("###");
-        boolean hasIngredients = lower.contains("ingredients");
-        boolean hasInstructions = lower.contains("instructions");
+        boolean hasIngredientsSection = lower.contains("#### ingredients:");
+        boolean hasInstructionsSection = lower.contains("#### instructions:");
 
-        return hasTitle && hasIngredients && hasInstructions;
+        return hasTitle && hasIngredientsSection && hasInstructionsSection;
     }
 
     @Override
