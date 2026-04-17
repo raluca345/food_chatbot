@@ -1,9 +1,10 @@
 package org.ai.chatbot_backend.service.implementations;
 
-import com.azure.core.exception.HttpResponseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.dto.ImageContent;
 import org.ai.chatbot_backend.dto.ImageDto;
@@ -14,12 +15,8 @@ import org.ai.chatbot_backend.model.Image;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.ImageRepository;
 import org.ai.chatbot_backend.service.interfaces.IImageService;
-import org.springframework.ai.azure.openai.AzureOpenAiImageModel;
-import org.springframework.ai.azure.openai.AzureOpenAiImageOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.image.ImagePrompt;
-import org.springframework.ai.image.ImageResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -28,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.client.RestClient;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -42,10 +40,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageService implements IImageService {
@@ -55,12 +55,16 @@ public class ImageService implements IImageService {
     private String bucket;
     @Value("${image.mock:false}")
     private boolean mockEnabled;
+    @Value("${azure.mai.endpoint}")
+    private String maiEndpoint;
+    @Value("${azure.mai.api-key}")
+    private String maiApiKey;
 
     private final UserService userService;
     private final S3Client r2Client;
     @Getter
     private final R2Service r2Service;
-    private final AzureOpenAiImageModel azureOpenAiImageModel;
+    private final RestClient restClient;
 
     private final ImageRepository imageRepository;
 
@@ -124,21 +128,54 @@ public class ImageService implements IImageService {
         }
 
         try {
-            ImageResponse response = azureOpenAiImageModel.call(
-                    new ImagePrompt(String.valueOf(prompt),
-                            AzureOpenAiImageOptions.builder()
-                                    .style(style)
-                                    .width(width)
-                                    .height(height)
-                                    .build())
-            );
-            if (response.getResults().isEmpty()) {
-                throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
-            }
-            return response.getResult().getOutput().getUrl();
-        } catch (HttpResponseException e) {
+            String promptText = String.valueOf(prompt);
+            return callMaiImageApi(promptText, width, height);
+        } catch (Exception e) {
+            log.error("Azure MAI image generation error: {}", e.getMessage(), e);
             throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
         }
+    }
+
+    private String callMaiImageApi(String prompt, int width, int height) throws Exception {
+        Map<String, Object> requestBody = Map.of(
+                "prompt", prompt,
+                "width", width,
+                "height", height,
+                "n", 1,
+                "model", "MAI-Image-2e"
+        );
+
+        // turn into json string to ensure content-length header is set properly
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = restClient.post()
+                .uri(maiEndpoint)
+                .header("api-key", maiApiKey)
+                .header("Content-Type", "application/json")
+                .body(jsonBody)
+                .retrieve()
+                .body(Map.class);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> data = (List<Map<String, String>>) response.get("data");
+        if (data == null || data.isEmpty()) {
+            throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
+        }
+
+        Map<String, String> result = data.getFirst();
+
+        if (result.containsKey("b64_json")) {
+            String base64 = result.get("b64_json");
+            return handleBase64ImageResponse(base64);
+        }
+
+        if (result.containsKey("url")) {
+            return result.get("url");
+        }
+
+        throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
     }
 
     private static @NonNull String getNormalizedSize(FoodImageRequest request, String style) {
@@ -280,4 +317,28 @@ public class ImageService implements IImageService {
         }
     }
 
+    private String handleBase64ImageResponse(String base64Data) throws Exception {
+        byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+
+        Path tempFile = Files.createTempFile("img-", ".png");
+        Files.write(tempFile, imageBytes);
+
+        try {
+            String filename = "temp/" + UUID.randomUUID() + ".png";
+            r2Client.putObject(
+                    PutObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(filename)
+                            .contentType("image/png")
+                            .build(),
+                    tempFile
+            );
+
+            return r2Service.generateSignedUrl(filename);
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
 }
+

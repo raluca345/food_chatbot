@@ -6,8 +6,8 @@ import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.ImageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.ai.azure.openai.AzureOpenAiImageModel;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.client.RestClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
@@ -28,10 +28,10 @@ public class ImageServiceTest {
         UserService userService = mock(UserService.class);
         r2Client = mock(S3Client.class);
         R2Service r2Service = mock(R2Service.class);
-        AzureOpenAiImageModel azureOpenAiImageModel = mock(AzureOpenAiImageModel.class);
+        RestClient restClient = mock(RestClient.class);
         imageRepository = mock(ImageRepository.class);
 
-        imageService = new ImageService(userService, r2Client, r2Service, azureOpenAiImageModel, imageRepository);
+        imageService = new ImageService(userService, r2Client, r2Service, restClient, imageRepository);
     }
 
     private User user(long id) {
@@ -91,9 +91,9 @@ public class ImageServiceTest {
         S3Client failingR2 = mock(S3Client.class);
         doThrow(new RuntimeException("S3 down")).when(failingR2).deleteObject(any(DeleteObjectRequest.class));
         R2Service r2Service = mock(R2Service.class);
-        AzureOpenAiImageModel azureOpenAiImageModel = mock(AzureOpenAiImageModel.class);
+        RestClient restClient = mock(RestClient.class);
 
-        ImageService failingService = new ImageService(userService, failingR2, r2Service, azureOpenAiImageModel, imageRepository);
+        ImageService failingService = new ImageService(userService, failingR2, r2Service, restClient, imageRepository);
 
         assertThrows(RuntimeException.class, () -> failingService.deleteByIdForUser(13L, u));
         verify(imageRepository, never()).deleteById(anyLong());

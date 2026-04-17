@@ -1,6 +1,6 @@
 package org.ai.chatbot_backend.service.implementations;
 
-import com.azure.core.exception.HttpResponseException;
+import com.openai.errors.OpenAIException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.exception.EmptyTitleException;
@@ -114,7 +114,7 @@ public class ConversationService implements IConversationService {
                 return "New Chat";
             }
             return result;
-        }  catch (HttpResponseException e) {
+        }  catch (OpenAIException e) {
             return "New Chat";
         }
     }

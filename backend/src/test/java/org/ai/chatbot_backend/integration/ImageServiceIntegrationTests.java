@@ -1,12 +1,15 @@
 package org.ai.chatbot_backend.integration;
 
-import com.azure.core.exception.HttpResponseException;
+import com.openai.errors.OpenAIException;
 import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.service.implementations.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.ai.azure.openai.AzureOpenAiImageModel;
+import org.springframework.ai.image.Image;
+import org.springframework.ai.image.ImageGeneration;
+import org.springframework.ai.image.ImageModel;
+import org.springframework.ai.image.ImageResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,7 +26,7 @@ public class ImageServiceIntegrationTests {
     ImageService imageService;
 
     @MockitoBean
-    private AzureOpenAiImageModel azureOpenAiImageModel;
+    private ImageModel imageModel;
 
     @ParameterizedTest
     @CsvSource(value = {
@@ -33,6 +36,15 @@ public class ImageServiceIntegrationTests {
     }, delimiter = ';', nullValues = "null")
     public void whenGivenValidParams_thenReturnImage(String name, String course, String ingredients, String dishType,
                                                         String style, String size) {
+        ImageResponse response = mock(ImageResponse.class);
+        ImageGeneration generation = mock(ImageGeneration.class);
+        Image output = mock(Image.class);
+        when(response.getResults()).thenReturn(java.util.List.of(generation));
+        when(response.getResult()).thenReturn(generation);
+        when(generation.getOutput()).thenReturn(output);
+        when(output.getUrl()).thenReturn("https://dalleprodsec.blob.core.windows.net/mock.png");
+        when(imageModel.call(any())).thenReturn(response);
+
         FoodImageRequest request = new FoodImageRequest();
         request.setName(name);
         request.setCourse(course);
@@ -62,8 +74,7 @@ public class ImageServiceIntegrationTests {
     }, nullValues = "null")
     public void whenGivenForbiddenParams_thenRefuseToGenerateImage(String name, String course, String ingredients,
                                                                    String dishType, String style, String size) {
-        HttpResponseException httpEx = mock(HttpResponseException.class);
-        when(azureOpenAiImageModel.call(any())).thenThrow(httpEx);
+        when(imageModel.call(any())).thenThrow(new OpenAIException("Provider refused"));
         FoodImageRequest request = new FoodImageRequest();
         request.setName(name);
         request.setCourse(course);

@@ -1,6 +1,6 @@
 package org.ai.chatbot_backend.service.implementations;
 
-import com.azure.core.exception.HttpResponseException;
+import com.openai.errors.OpenAIException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -236,7 +236,7 @@ public class ChatService implements IChatService {
                 }
             }
             return modelOut;
-        } catch (HttpResponseException e) {
+        } catch (OpenAIException e) {
             throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
         }
     }

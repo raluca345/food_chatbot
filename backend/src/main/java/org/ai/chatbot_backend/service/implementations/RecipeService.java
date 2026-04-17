@@ -2,7 +2,7 @@ package org.ai.chatbot_backend.service.implementations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.azure.core.exception.HttpResponseException;
+import com.openai.errors.OpenAIException;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.RecipeResponse;
@@ -156,7 +156,7 @@ public class RecipeService implements IRecipeService {
             }
 
             return new CreateRecipeResult(recipeResponse.getRecipeMarkdown(), id, downloadUrl);
-        } catch (HttpResponseException e) {
+        } catch (OpenAIException e) {
             throw new InappropriateRequestRefusalException(
                     "I'm sorry, but I can't assist with that request."
             );

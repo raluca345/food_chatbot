@@ -1,9 +1,9 @@
 spring.application.name=chatbot_backend
-# Azure OpenAI configuration
-spring.ai.azure.openai.endpoint=
-spring.ai.azure.openai.api-key=
-spring.ai.azure.openai.chat.options.deployment-name=
-spring.ai.azure.openai.image.options.deployment-name=
+# Spring AI OpenAI SDK configuration (Azure OpenAI / Microsoft Foundry via openai.azure.com endpoint)
+spring.ai.openai-sdk.base-url=
+spring.ai.openai-sdk.api-key=
+spring.ai.openai-sdk.chat.options.model=
+spring.ai.openai-sdk.image.options.model=
 # Database configuration
 spring.datasource.url=
 spring.datasource.username=

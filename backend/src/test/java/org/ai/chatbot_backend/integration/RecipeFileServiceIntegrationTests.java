@@ -1,7 +1,6 @@
 package org.ai.chatbot_backend.integration;
 
-import com.azure.core.exception.HttpResponseException;
-import com.azure.core.http.HttpResponse;
+import com.openai.errors.OpenAIException;
 import org.ai.chatbot_backend.dto.CreateRecipeResult;
 import org.ai.chatbot_backend.dto.RecipeRequest;
 import org.ai.chatbot_backend.enums.UserRole;
@@ -151,8 +150,7 @@ public class RecipeFileServiceIntegrationTests {
 
         @Test
         void whenIllegalOrRefusedInput_thenThrowsAndNoFileOrUrlGenerated() {
-            HttpResponse mockResponse = mock(HttpResponse.class);
-            when(chatModel.call(any(Prompt.class))).thenThrow(new HttpResponseException("refused", mockResponse));
+            when(chatModel.call(any(Prompt.class))).thenThrow(new OpenAIException("refused"));
 
             assertThatThrownBy(() -> recipeService.createRecipe(recipeRequest("illegal substances", "null", "null"), null)).isInstanceOf(InappropriateRequestRefusalException.class)
                     .hasMessageContaining("I'm sorry, but I can't assist with that request.");
@@ -203,8 +201,7 @@ public class RecipeFileServiceIntegrationTests {
 
         @Test
         void whenIllegalOrRefusedInput_thenThrowsAndNoFileOrUrlGenerated() {
-            HttpResponse mockResponse = mock(HttpResponse.class);
-            when(chatModel.call(any(Prompt.class))).thenThrow(new HttpResponseException("refused", mockResponse));
+            when(chatModel.call(any(Prompt.class))).thenThrow(new OpenAIException("refused"));
 
             assertThat(chatService.getResponse("Give me a recipe containing illegal substances."))
                     .isEqualTo("Sorry, I can only answer questions about food.");

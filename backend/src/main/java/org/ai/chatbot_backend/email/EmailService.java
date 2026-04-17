@@ -32,7 +32,7 @@ public class EmailService implements IEmailService {
             mailSender.send(message);
             return true;
         } catch (Exception e) {
-            log.error("Failed to send simple email to {}", details.getRecipient(), e);
+            log.error("Failed to send email to {}", details.getRecipient(), e);
             return false;
         }
     }
