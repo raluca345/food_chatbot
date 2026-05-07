@@ -1,5 +1,6 @@
 package org.ai.chatbot_backend.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,9 +10,24 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Result of a recipe creation request")
 public class CreateRecipeResult {
+    @Schema(
+            description = "Recipe content in markdown format",
+            example = "# Spaghetti Carbonara\n\n## Ingredients\n- 400g spaghetti"
+    )
     private String recipeMarkdown;
+
+    @Schema(
+            description = "File ID for the downloadable recipe file",
+            example = "42"
+    )
     private Long fileId;
+
+    @Schema(
+            description = "Download link in markdown format",
+            example = "[Download recipe](https://api.example.com/recipes/download/42)"
+    )
     private String downloadMarkdown;
 
     // Jackson exposes this as JSON field fullText

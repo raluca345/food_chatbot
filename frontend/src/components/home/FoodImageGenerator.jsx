@@ -24,7 +24,6 @@ function FoodImageGenerator() {
 
   const handleGenerateImage = async () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-
     setError("");
     setLoading(true);
     try {
@@ -70,8 +69,10 @@ function FoodImageGenerator() {
             <label>Size</label>
             <select name="size" value={params.size} onChange={handleChange}>
               <option value="1024x1024">1024x1024</option>
-              <option value="1024x1792">1024x1792</option>
-              <option value="1792x1024">1792x1024</option>
+              <option value="1365x768">1365x768</option>
+              <option value="768x1365">768x1365</option>
+              <option value="1024x896">1024x896</option>
+              <option value="896x1024">896x1024</option>
             </select>
           </div>
           <div className="form-row">

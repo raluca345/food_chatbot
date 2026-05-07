@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,11 @@ public class UserService implements IUserService {
         String normalized = email == null ? null : email.trim().toLowerCase();
         return userRepository.findByEmail(normalized)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    public Optional<User> findOptionalUserByEmail(String email) {
+        String normalized = email == null ? null : email.trim().toLowerCase();
+        return userRepository.findByEmail(normalized);
     }
 
     @Override

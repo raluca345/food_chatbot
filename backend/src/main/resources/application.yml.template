@@ -5,3 +5,15 @@ cloudflare:
     secret-key:
     bucket:
     public-domain:
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: false
+  springdoc-openapi-core:
+    api-docs:
+      resolve-fully: false

@@ -5,6 +5,12 @@
   margin-top: 20px;
 }
 
+.image-grid-empty {
+  color: #8a8a8a;
+  padding: 12px 18px;
+  background: transparent;
+}
+
 .image-slot {
   position: relative;
   width: 100%;

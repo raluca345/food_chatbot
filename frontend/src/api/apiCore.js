@@ -62,10 +62,10 @@ export async function handleErrorResponse(res, fallbackMessage) {
       m.includes("duplicate") ||
       m.includes("registered"))
   ) {
-    userMessage = "An account with that email already exists.";
+    userMessage = "An account with that email address already exists.";
   } else if (status === 409) {
     if (url.includes("/auth/register")) {
-      userMessage = "An account with that email already exists.";
+      userMessage = "An account with that email address already exists.";
     } else {
       userMessage = "Conflict: the resource already exists.";
     }

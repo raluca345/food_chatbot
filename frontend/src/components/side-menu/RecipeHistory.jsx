@@ -46,7 +46,10 @@ export default function RecipeHistory() {
       .catch((err) => {
         if (!mounted) return;
         console.error("Failed to load history:", err);
-        setError(err?.userMessage || "Failed to load recipe history. Please try again later.");
+        setError(
+          err?.userMessage ||
+            "Failed to load recipe history. Please try again later.",
+        );
       })
       .finally(() => {
         if (!mounted) return;
@@ -76,15 +79,15 @@ export default function RecipeHistory() {
       if (next.length === 0 && page > 1) {
         setPage((p) => p - 1);
       }
-      } catch (err) {
+    } catch (err) {
       setHistoryEntries(prev);
       setDeletingIds((s) => {
         const n = new Set(s);
         n.delete(entryId);
         return n;
       });
-        console.error("Failed to delete history entry:", err);
-        setError(err?.userMessage || "Failed to delete entry. Please try again.");
+      console.error("Failed to delete history entry:", err);
+      setError(err?.userMessage || "Failed to delete entry. Please try again.");
     }
   };
 
@@ -120,12 +123,16 @@ export default function RecipeHistory() {
           URL.revokeObjectURL(url);
         } catch (err) {
           console.error("Download failed", err);
-          setError(err?.userMessage || "Failed to download recipe. Please try again.");
+          setError(
+            err?.userMessage || "Failed to download recipe. Please try again.",
+          );
         }
       })
       .catch((err) => {
         console.error("Download request failed", err);
-        setError(err?.userMessage || "Failed to download recipe. Please try again.");
+        setError(
+          err?.userMessage || "Failed to download recipe. Please try again.",
+        );
       })
       .finally(() => {
         setDownloadingIds((s) => {
@@ -219,24 +226,26 @@ export default function RecipeHistory() {
               className={`panel ${expandedIndex === index ? "open" : ""}`}
               aria-hidden={expandedIndex !== index}
             >
-                      <ReactMarkdown
-                        rehypePlugins={rehypePlugins}
-                        components={markdownComponents}
-                        urlTransform={markdownUrlTransform}
-                      >
-                        {entry.content}
-                      </ReactMarkdown>
+              <ReactMarkdown
+                rehypePlugins={rehypePlugins}
+                components={markdownComponents}
+                urlTransform={markdownUrlTransform}
+              >
+                {entry.content}
+              </ReactMarkdown>
             </div>
           </li>
         ))}
       </ul>
-      <PaginationControls
-        page={page}
-        pageSize={PAGE_SIZE}
-        total={total}
-        onPageChange={(p) => setPage(p)}
-        disabled={loading}
-      />
+      {!loading && !error && historyEntries.length > 0 && (
+        <PaginationControls
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          onPageChange={(p) => setPage(p)}
+          disabled={loading}
+        />
+      )}
       <ConfirmModal
         open={!!confirmDelete}
         title="Confirm delete"

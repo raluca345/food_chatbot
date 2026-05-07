@@ -101,8 +101,10 @@ public class GenIControllerValidationTests {
     @ParameterizedTest
     @CsvSource({
             "1024x1024",
-            "1024x1792",
-            "1792x1024"
+            "1365x768",
+            "768x1365",
+            "896x1024",
+            "1024x896"
     })
     void whenValidSizes_thenReturnsImageUrl(String size) throws Exception {
         when(imageService.generateFoodImageFromParams(any(FoodImageRequest.class)))

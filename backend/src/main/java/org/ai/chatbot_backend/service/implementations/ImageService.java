@@ -15,6 +15,7 @@ import org.ai.chatbot_backend.model.Image;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.ImageRepository;
 import org.ai.chatbot_backend.service.interfaces.IImageService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +25,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.client.RestClient;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -44,11 +44,16 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageService implements IImageService {
+    private static final int MIN_IMAGE_DIMENSION = 768;
+    private static final int MAX_TOTAL_PIXELS = 1_048_576;
+    private static final Pattern SIZE_PATTERN = Pattern.compile("^(\\d+)x(\\d+)$");
 
     @Value("${cloudflare.r2.bucket}")
     @Getter
@@ -85,13 +90,10 @@ public class ImageService implements IImageService {
         String style = request.getStyle();
         String normalizedSize = getNormalizedSize(request, style);
 
-        String systemPrompt = "You are a helpful assistant that only generates images of food. Do not generate images" +
-                " of anything else.";
-        StringBuilder templateBuilder = new StringBuilder(systemPrompt +
-                " I want an image of a dish with the name: {name}.");
+        StringBuilder templateBuilder = getSystemPrompt();
 
-        if (name == null || name.isBlank() || name.equals("null")) {
-            name = "any";
+        if (name != null && !name.isBlank() && !name.equals("null")) {
+            templateBuilder.append("It has the name: {name}.");
         }
 
         if (course != null && !course.isBlank()) {
@@ -108,7 +110,7 @@ public class ImageService implements IImageService {
         PromptTemplate promptTemplate = new PromptTemplate(template);
 
         Map<String, Object> params = Map.of(
-                "name", name,
+                "name", name != null ? name : "",
                 "course", course != null ? course : "",
                 "ingredients", ingredients != null ? ingredients : "",
                 "dishType", dishType != null ? dishType : ""
@@ -117,9 +119,6 @@ public class ImageService implements IImageService {
 
         int width, height;
         String[] parts = normalizedSize.split("x");
-        if (parts.length != 2) {
-            throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
-        }
         try {
             width = Integer.parseInt(parts[0]);
             height = Integer.parseInt(parts[1]);
@@ -134,6 +133,23 @@ public class ImageService implements IImageService {
             log.error("Azure MAI image generation error: {}", e.getMessage(), e);
             throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
         }
+    }
+
+    @NotNull
+    private static StringBuilder getSystemPrompt() {
+        String systemPrompt = """
+                You are a food-only image generation assistant.
+
+                STRICT RULES:
+                - Generate only edible food or drink.
+                - Refuse requests containing non-food objects or inedible items.
+                - Never reinterpret non-food items as garnish, props, plating, art, or decoration.
+                - Never include tools, hardware, chemicals, drugs, weapons, or other non-food objects.
+
+                If any non-food item is requested, refuse the request and do not generate an image.
+                """;
+        return new StringBuilder(systemPrompt +
+                " Create an image of a dish. ");
     }
 
     private String callMaiImageApi(String prompt, int width, int height) throws Exception {
@@ -190,11 +206,25 @@ public class ImageService implements IImageService {
             size = "1024x1024";
         }
         String normalizedSize = size.trim().toLowerCase();
-        if (!normalizedSize.equals("1024x1024")
-                && !normalizedSize.equals("1024x1792")
-                && !normalizedSize.equals("1792x1024")) {
+        Matcher matcher = SIZE_PATTERN.matcher(normalizedSize);
+        if (!matcher.matches()) {
             throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
         }
+
+        int width;
+        int height;
+        try {
+            width = Integer.parseInt(matcher.group(1));
+            height = Integer.parseInt(matcher.group(2));
+        } catch (NumberFormatException e) {
+            throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
+        }
+
+        long totalPixels = (long) width * height;
+        if (width < MIN_IMAGE_DIMENSION || height < MIN_IMAGE_DIMENSION || totalPixels > MAX_TOTAL_PIXELS) {
+            throw new InappropriateRequestRefusalException("Sorry, the picked size is invalid");
+        }
+
         return normalizedSize;
     }
 
@@ -271,7 +301,7 @@ public class ImageService implements IImageService {
                 new ResourceNotFoundException("Image with id " + imageId + " not found"));
 
         if (image.getUser() == null || image.getUser().getId() != user.getId()) {
-            throw new AccessDeniedException("User does not have permission to delete this image");
+            throw new ResourceNotFoundException("Image not found");
         }
 
         String filename = image.getFilename();
@@ -297,7 +327,7 @@ public class ImageService implements IImageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Image with id " + imageId + " not found"));
 
         if (image.getUser() == null || image.getUser().getId() != user.getId()) {
-            throw new AccessDeniedException("User does not have permission to access this image");
+            throw new ResourceNotFoundException("Image not found");
         }
 
         return image;

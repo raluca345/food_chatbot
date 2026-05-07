@@ -30,7 +30,10 @@ public class ImageServiceIntegrationTests {
     @ParameterizedTest
     @CsvSource(value = {
             "braised pork;null;null;null;vivid;1024x1024",
+            "braised pork;null;null;null;vivid;1365x768",
+            "braised pork;null;null;null;vivid;768x1365",
             "chicken soup;soup;chicken;broth;natural;1024x1024",
+            "chicken soup;soup;chicken;broth;natural;896x1024",
             "vegetable stir fry;null;vegetables;null;vivid;1024x1024"
     }, delimiter = ';', nullValues = "null")
     public void whenGivenValidParams_thenReturnImage(String name, String course, String ingredients, String dishType,
@@ -64,6 +67,27 @@ public class ImageServiceIntegrationTests {
         assertThat(imageUrl).isNotNull();
         assertThat(imageUrl).isInstanceOf(String.class);
         assertThat(imageUrl).startsWith("https://");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "1024x1792",
+            "1792x1024",
+            "767x1024",
+            "1024x767",
+            "abcd",
+            "1024*1024"
+    })
+    public void whenGivenInvalidSize_thenRefuseToGenerateImage(String size) {
+        FoodImageRequest request = new FoodImageRequest();
+        request.setName("pizza");
+        request.setStyle("vivid");
+        request.setSize(size);
+
+        assertThatThrownBy(() ->
+                imageService.generateFoodImageFromParams(request)
+        ).isInstanceOf(InappropriateRequestRefusalException.class)
+                .hasMessage("Sorry, the picked size is invalid");
     }
 
     @ParameterizedTest
@@ -107,5 +131,4 @@ public class ImageServiceIntegrationTests {
         ).isInstanceOf(InappropriateRequestRefusalException.class);
     }
 }
-
 

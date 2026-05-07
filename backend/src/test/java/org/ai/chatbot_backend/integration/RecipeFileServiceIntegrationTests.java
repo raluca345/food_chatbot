@@ -204,7 +204,7 @@ public class RecipeFileServiceIntegrationTests {
             when(chatModel.call(any(Prompt.class))).thenThrow(new OpenAIException("refused"));
 
             assertThat(chatService.getResponse("Give me a recipe containing illegal substances."))
-                    .isEqualTo("Sorry, I can only answer questions about food.");
+                    .isEqualTo("Sorry, I can only talk about food.");
 
             verifyNoInteractions(recipeFileService);
         }

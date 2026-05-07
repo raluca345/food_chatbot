@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/recipes/download/**").authenticated()
                         .requestMatchers("/api/v1/recipes").permitAll()
                         .requestMatchers("/api/v1/food-images/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/users/me/**").authenticated()
                         .requestMatchers("/api/v1/recipes/history/**").authenticated()
                         .anyRequest().authenticated()

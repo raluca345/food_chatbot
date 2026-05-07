@@ -69,7 +69,7 @@ public class ChatService implements IChatService {
                    2. step 2
 
                 3) REFUSALS:
-                   - If question is NOT about food: respond only with "Sorry, I can only answer questions about food."
+                   - If question is NOT about food: respond only with "Sorry, I can only talk about food."
                    - Do NOT invent or include any download links or URLs
                    - Do NOT mention internal IDs or database references
 
@@ -254,6 +254,10 @@ public class ChatService implements IChatService {
             }
             return modelOut;
         } catch (OpenAIException e) {
+            log.error("Chat provider call failed. exceptionType={}, message={}",
+                    e.getClass().getSimpleName(),
+                    e.getMessage(),
+                    e);
             throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
         }
     }

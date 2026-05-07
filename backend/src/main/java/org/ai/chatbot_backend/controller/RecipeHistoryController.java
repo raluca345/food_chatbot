@@ -1,9 +1,16 @@
 package org.ai.chatbot_backend.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.PageResult;
 import org.ai.chatbot_backend.dto.RecipeHistoryDto;
-import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.RecipeHistory;
 import org.ai.chatbot_backend.model.RecipeFile;
 import org.ai.chatbot_backend.model.User;
@@ -14,22 +21,34 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users/me/recipes/history")
+@Tag(name = "3. Recipe History", description = "Authenticated user's generated recipe history")
 public class RecipeHistoryController {
 
     private final IRecipeHistoryService recipeHistoryService;
     private final RecipeFileService recipeFileService;
     private final AuthHelper authHelper;
 
+    @Operation(
+            summary = "Get recipe history",
+            description = "Returns paged recipe history entries for the authenticated user."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "History returned",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageResult.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping
     public ResponseEntity<?> getHistory(Authentication authentication,
+            @Parameter(description = "1-based page number", example = "1")
             @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "Page size", example = "10")
             @RequestParam(defaultValue = "10") int pageSize) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
@@ -41,25 +60,43 @@ public class RecipeHistoryController {
         return ResponseEntity.ok(pageDto);
     }
 
+    @Operation(
+            summary = "Delete recipe history entry",
+            description = "Deletes a history entry and its associated recipe file for the authenticated user."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "History entry deleted"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "History entry not found")
+    })
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteHistoryEntry(@PathVariable long id,
+    public ResponseEntity<?> deleteHistoryEntry(
+            @Parameter(description = "History entry id", example = "23")
+            @PathVariable long id,
                                                 Authentication authentication) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
-        try {
-            recipeHistoryService.deleteFromHistory(user.getId(), id);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("History entry not found");
-        }
+        recipeHistoryService.deleteFromHistory(user.getId(), id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @Operation(
+            summary = "Download recipe from history",
+            description = "Downloads a recipe file from user's recipe history."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recipe file downloaded"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "History entry or recipe file not found")
+    })
     @GetMapping("{id}/download")
-    public ResponseEntity<?> downloadHistoryRecipe(@PathVariable Long id,
+    public ResponseEntity<?> downloadHistoryRecipe(
+            @Parameter(description = "History entry id", example = "23")
+            @PathVariable Long id,
                                                    Authentication authentication) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
@@ -77,13 +114,9 @@ public class RecipeHistoryController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Recipe file not found");
         }
         Long fileId = file.getId();
-        try {
-            Resource resource = recipeFileService.getRecipeFileForUser(fileId, user.getId());
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + fileId + ".txt")
-                    .body(resource);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Recipe file not found");
-        }
+        Resource resource = recipeFileService.getRecipeFileForUser(fileId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recipe-" + fileId + ".txt")
+                .body(resource);
     }
 }

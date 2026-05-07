@@ -2,7 +2,11 @@ import React, { useEffect, useState, useRef } from "react";
 import "./Gallery.css";
 import { LuDownload } from "react-icons/lu";
 import { FaTrashCan } from "react-icons/fa6";
-import { getUserImages, deleteImage, downloadImage } from "../../api/galleryApi";
+import {
+  getUserImages,
+  deleteImage,
+  downloadImage,
+} from "../../api/galleryApi";
 import { IoClose } from "react-icons/io5";
 import Spinner from "../commons/Spinner";
 import PaginationControls from "../commons/PaginationControls";
@@ -89,7 +93,9 @@ export default function Gallery() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Download error:", err);
-      setError(err?.userMessage || "Failed to download the image. Please try again.");
+      setError(
+        err?.userMessage || "Failed to download the image. Please try again.",
+      );
     }
   };
 
@@ -129,7 +135,9 @@ export default function Gallery() {
       }
     } catch (err) {
       console.error("Image delete error:", err);
-      setError(err?.userMessage || "Failed to delete the image. Please try again.");
+      setError(
+        err?.userMessage || "Failed to delete the image. Please try again.",
+      );
       // revert
       setUserImages(prevImages);
       setTotal(prevTotal);
@@ -156,7 +164,7 @@ export default function Gallery() {
       ) : error ? (
         <div className="image-grid image-grid--error">{error}</div>
       ) : userImages.length === 0 ? (
-        <div className="image-grid image-grid--empty">No images yet.</div>
+        <div className="image-grid image-grid-empty">No images yet.</div>
       ) : (
         <div className="image-grid">
           {(() => {
