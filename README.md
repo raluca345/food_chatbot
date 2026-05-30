@@ -4,6 +4,33 @@ Don't know what to eat today and would rather avoid eating cup noodles for the 4
 
 A web app built with Spring Boot and React, using a MySQL database.
 
+
+## Features 
+
+Talk about food:
+
+![food chat](https://github.com/user-attachments/assets/e4520996-7830-4074-b62c-b127db764b9d)  
+
+
+Find what to cook today (generate a recipe with the ingredients from your pantry):
+
+![recipe](https://github.com/user-attachments/assets/65d715a4-25f7-4750-975d-0915d73a98d1)
+
+
+Bring to life your latest craving (generate an image):
+
+![image](https://github.com/user-attachments/assets/2b2251ea-dafc-4fdf-87a1-1b1d7ba2ea8e)
+
+
+View your recipes, download your favorites and delete those that didn't taste as good as expected:
+
+![recipe history](https://github.com/user-attachments/assets/0bfc31a5-6756-427d-abd2-ffd2efcacded)
+
+
+View your images, download your favorites and delete those that don't make you hungry:
+
+![gallery](https://github.com/user-attachments/assets/d257d704-a4ee-4980-b91f-edacfc376db3)
+
 ## Installation
 For the React frontend, navigate to the `frontend` folder and install the NodeJS dependencies.
 
