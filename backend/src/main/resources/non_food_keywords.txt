@@ -1,0 +1,235 @@
+# Hardware & tools
+screw
+nail
+hammer
+bolt
+nut
+wrench
+drill
+saw
+pliers
+screwdriver
+toolbox
+chisel
+crowbar
+clamp
+vice
+mallet
+file
+rasp
+punch
+level
+tape measure
+sandpaper
+staple
+rivet
+washer
+hinge
+latch
+padlock
+wire
+cable
+pipe
+tube
+rod
+beam
+bracket
+anchor
+
+# Weapons
+weapon
+firearm
+gun
+handgun
+pistol
+revolver
+rifle
+shotgun
+sniper
+carbine
+musket
+sword
+knife
+dagger
+blade
+machete
+axe
+hatchet
+spear
+lance
+bow
+arrow
+crossbow
+grenade
+bomb
+explosive
+ammunition
+bullet
+shell
+missile
+rocket
+landmine
+taser
+pepper spray
+baton
+club
+mace
+flail
+whip
+brass knuckles
+
+# Chemicals & cleaning
+bleach
+detergent
+solvent
+paint thinner
+turpentine
+acetone
+ammonia
+cleaning agent
+disinfectant
+pesticide
+herbicide
+insecticide
+fertilizer
+poison
+venom
+toxin
+acid
+base
+alkali
+reagent
+chemical
+motor oil
+engine oil
+brake fluid
+transmission fluid
+coolant
+antifreeze
+gasoline
+diesel
+kerosene
+fuel
+lighter fluid
+propane
+butane
+methanol
+ethanol
+isopropanol
+rubbing alcohol
+hydrogen peroxide
+formaldehyde
+bleach
+lye
+caustic soda
+
+# Drugs & substances
+cocaine
+heroin
+meth
+methamphetamine
+ecstasy
+mdma
+lsd
+acid
+crack
+opium
+morphine
+fentanyl
+ketamine
+pcp
+marijuana
+cannabis
+weed
+hashish
+narcotics
+drug
+illegal substance
+vape
+cigarette
+tobacco
+
+# Construction & industrial
+cement
+concrete
+gravel
+asphalt
+tar
+plaster
+mortar
+brick
+tile
+lumber
+plywood
+drywall
+insulation
+fiberglass
+asbestos
+lead
+mercury
+arsenic
+cyanide
+plastic fragments
+metal shavings
+glass shards
+broken glass
+sawdust
+ash
+slag
+rust
+battery
+motor
+engine
+circuit
+wire
+cable
+electronics
+e-waste
+
+# Miscellaneous inedible
+rock
+stone
+dirt
+soil
+mud
+clay
+rubber
+latex
+foam
+sponge
+fabric
+cloth
+paper
+cardboard
+plastic
+metal
+aluminum
+steel
+iron
+copper
+zinc
+tin
+chrome
+nickel
+gold
+silver
+platinum
+coal
+charcoal
+wax
+candle
+soap
+shampoo
+lotion
+cream
+perfume
+ink
+paint
+glue
+tape
+staple
+pin
+needle
+thread
+button
+zipper

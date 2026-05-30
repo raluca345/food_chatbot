@@ -2,9 +2,6 @@ package org.ai.chatbot_backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -43,37 +40,13 @@ public class GenAIController {
 
     @Operation(
             summary = "Start conversation (authenticated)",
-            description =
-                    "Creates conversation for the authenticated user and returns the assistant response.",
-            requestBody =
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content =
-                    @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ChatMessageRequest.class),
-                            examples =
-                            @ExampleObject(
-                                    name = "Start conversation request",
-                                    value =
-                                            """
-                                                    {
-                                                      "message": "What can I cook with eggs and cheese?"
-                                                    }
-                                                    """))))
+            description = "Creates conversation for the authenticated user and returns the assistant's response.")
     @SecurityRequirement(name = "bearerAuth")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "201",
-                            description = "Conversation created successfully",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = AssistantMessageDto.class))),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "400", description = "Invalid request")
-            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Conversation created successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @PostMapping("/chat")
     public ResponseEntity<AssistantMessageDto> startConversation(
             @RequestBody ChatMessageRequest request, Authentication authentication) {
@@ -89,35 +62,11 @@ public class GenAIController {
 
     @Operation(
             summary = "Start guest conversation",
-            description =
-                    "Generates an assistant response for a guest user without saving conversation data.",
-            requestBody =
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content =
-                    @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ChatMessageRequest.class),
-                            examples =
-                            @ExampleObject(
-                                    name = "Guest chat request",
-                                    value =
-                                            """
-                                                    {
-                                                      "message": "Suggest a quick pasta recipe."
-                                                    }
-                                                    """))))
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Response generated successfully",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = AssistantMessageDto.class))),
-                    @ApiResponse(responseCode = "400", description = "Invalid request")
-            })
+            description = "Generates an assistant response for a guest user without saving conversation data.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Response generated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @PostMapping("/chat/guest")
     public ResponseEntity<AssistantMessageDto> startGuestConversation(
             @RequestBody ChatMessageRequest request) {
@@ -127,21 +76,13 @@ public class GenAIController {
 
     @Operation(
             summary = "Continue conversation",
-            description =
-                    "Adds a user message to an existing conversation and returns the assistant response.")
+            description = "Adds a user message to an existing conversation and returns the assistant's response.")
     @SecurityRequirement(name = "bearerAuth")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Assistant response returned successfully",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = AssistantMessageDto.class))),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "404", description = "Conversation not found")
-            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Assistant response returned successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Conversation not found")
+    })
     @PostMapping("/chat/{conversationId}/messages")
     public ResponseEntity<AssistantMessageDto> continueConversation(
             @Parameter(description = "Conversation id", example = "42") @PathVariable long conversationId,
@@ -158,21 +99,13 @@ public class GenAIController {
 
     @Operation(
             summary = "Get conversation",
-            description =
-                    "Retrieves a conversation by ID, with its title and a paginated message list ordered by newest first.")
+            description = "Retrieves a conversation by ID, with its title and a paginated message list ordered by newest first.")
     @SecurityRequirement(name = "bearerAuth")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Conversation returned",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ConversationDto.class))),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "404", description = "Conversation not found")
-            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Conversation returned"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Conversation not found")
+    })
     @GetMapping("/chat/{conversationId}")
     public ResponseEntity<ConversationDto> getConversation(
             @Parameter(description = "Conversation id", example = "42") @PathVariable long conversationId,
@@ -202,21 +135,12 @@ public class GenAIController {
 
     @Operation(
             summary = "Get conversations",
-            description =
-                    "Returns all conversations for the authenticated user as a paginated list, ordered by most "
-                            + "recently updated first.")
+            description = "Returns all conversations for the authenticated user as a paginated list, ordered by most recently updated first.")
     @SecurityRequirement(name = "bearerAuth")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Conversations returned",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = PageResult.class))),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized")
-            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Conversations returned"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/chat")
     public ResponseEntity<PageResult<ConversationDto>> getConversations(
             Authentication authentication,
@@ -238,41 +162,18 @@ public class GenAIController {
             summary = "Rename conversation",
             description = "Updates the title of one conversation.")
     @SecurityRequirement(name = "bearerAuth")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Conversation renamed",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ConversationDto.class))),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "404", description = "Conversation not found")
-            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Conversation renamed"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Conversation not found")
+    })
     @PatchMapping(
             path = "/chat/{conversationId}",
             consumes = "application/json",
             produces = "application/json")
     public ResponseEntity<ConversationDto> updateConversationTitle(
             @Parameter(description = "Conversation id", example = "42") @PathVariable long conversationId,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content =
-                    @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = UpdateTitleRequest.class),
-                            examples =
-                            @ExampleObject(
-                                    name = "Rename conversation request",
-                                    value =
-                                            """
-                                                    {
-                                                      "title": "Weeknight Pasta Ideas"
-                                                    }
-                                                    """)))
-            @RequestBody
-            UpdateTitleRequest request,
+            @RequestBody UpdateTitleRequest request,
             Authentication authentication) {
         User user = authHelper.getAuthenticatedUserOrNull(authentication);
         if (user == null) {
@@ -309,41 +210,13 @@ public class GenAIController {
 
     @Operation(
             summary = "Generate recipe",
-            description =
-                    "Generates a recipe based on provided ingredients, cuisine and dietary preferences. Works for"
-                            + " both guest and authenticated users. Authenticated users have their recipes saved to history.",
-            requestBody =
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content =
-                    @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = RecipeRequest.class),
-                            examples =
-                            @ExampleObject(
-                                    name = "Recipe generation request example",
-                                    value =
-                                            """
-                                                    {
-                                                      "ingredients": "chicken breast, tomatoes, garlic, basil, olive oil",
-                                                      "cuisine": "mediterranean",
-                                                      "dietaryRestrictions": "high-protein, low-carb"
-                                                    }
-                                                    """))))
+            description = "Generates a recipe based on provided ingredients, cuisine and dietary preferences. Works for both guest and authenticated users. Authenticated users have their recipes saved to history.")
     @SecurityRequirement(name = "bearerAuth")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Recipe generated successfully",
-                            content = {
-                                    @Content(
-                                            mediaType = "application/json",
-                                            schema = @Schema(implementation = CreateRecipeResult.class))
-                            }),
-                    @ApiResponse(responseCode = "400", description = "Invalid ingredients or request"),
-                    @ApiResponse(responseCode = "404", description = "Recipe generation failed")
-            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recipe generated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid ingredients or request"),
+            @ApiResponse(responseCode = "404", description = "Recipe generation failed")
+    })
     @PostMapping("/recipes")
     public ResponseEntity<?> generateRecipe(
             @RequestBody RecipeRequest request, Authentication authentication) {
@@ -385,30 +258,13 @@ public class GenAIController {
     @Operation(
             summary = "Download guest recipe",
             description = "Builds a temporary downloadable text file from the given guest recipe (in markdown format).")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(responseCode = "200", description = "Recipe downloaded"),
-                    @ApiResponse(responseCode = "400", description = "Missing or invalid recipe")
-            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Recipe downloaded"),
+            @ApiResponse(responseCode = "400", description = "Missing or invalid recipe")
+    })
     @PostMapping("/recipes/download/guest")
     public ResponseEntity<Resource> downloadGuestRecipe(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content =
-                    @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = RecipeDownloadRequest.class),
-                            examples =
-                            @ExampleObject(
-                                    name = "Guest recipe download request",
-                                    value =
-                                            """
-                                                    {
-                                                      "recipeMarkdown": "## Ingredients\\n- eggs\\n- cheese\\n\\n## Instructions\\n1. Mix\\n2. Bake"
-                                                    }
-                                                    """)))
-            @RequestBody
-            RecipeDownloadRequest request) {
+            @RequestBody RecipeDownloadRequest request) {
         if (request == null
                 || request.getRecipeMarkdown() == null
                 || request.getRecipeMarkdown().isBlank()) {
@@ -424,46 +280,16 @@ public class GenAIController {
 
     @Operation(
             summary = "Generate food image",
-            description =
-                    "Generates a food image URL from the given parameters. Authenticated users also persist the image" +
-                            " to gallery.")
+            description = "Generates a food image URL from the given parameters. Authenticated users also persist the image to gallery.")
     @SecurityRequirement(name = "bearerAuth")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Image generated successfully",
-                            content =
-                            @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ImageDto.class))),
-                    @ApiResponse(responseCode = "400", description = "Invalid input"),
-                    @ApiResponse(responseCode = "500", description = "Image generation failed")
-            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Image generated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "500", description = "Image generation failed")
+    })
     @PostMapping("/food-images")
     public ResponseEntity<?> generateFoodImage(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content =
-                    @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = FoodImageRequest.class),
-                            examples =
-                            @ExampleObject(
-                                    name = "Food image generation request",
-                                    value =
-                                            """
-                                                    {
-                                                      "name": "Margherita Pizza",
-                                                      "style": "natural",
-                                                      "size": "1024x1024",
-                                                      "course": "main",
-                                                      "ingredients": "tomato, mozzarella, basil",
-                                                      "dishType": "pizza"
-                                                    }
-                                                    """)))
-            @RequestBody
-            FoodImageRequest request,
+            @RequestBody FoodImageRequest request,
             Authentication authentication)
             throws Exception {
         String tempImageUrl = imageService.generateFoodImageFromParams(request);

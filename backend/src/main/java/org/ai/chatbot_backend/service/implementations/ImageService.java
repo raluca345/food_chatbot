@@ -1,6 +1,7 @@
 package org.ai.chatbot_backend.service.implementations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -34,18 +36,19 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -54,6 +57,7 @@ public class ImageService implements IImageService {
     private static final int MIN_IMAGE_DIMENSION = 768;
     private static final int MAX_TOTAL_PIXELS = 1_048_576;
     private static final Pattern SIZE_PATTERN = Pattern.compile("^(\\d+)x(\\d+)$");
+    private static final String DEFAULT_REFUSAL_MESSAGE = "Sorry, I can only generate images of food.";
 
     @Value("${cloudflare.r2.bucket}")
     @Getter
@@ -73,6 +77,47 @@ public class ImageService implements IImageService {
 
     private final ImageRepository imageRepository;
 
+    @Value("classpath:non_food_keywords.txt")
+    private Resource keywordsFile;
+    private Set<String> nonFoodKeywords = Set.of();
+
+    @PostConstruct
+    public void loadKeywords() throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(keywordsFile.getInputStream()))) {
+            Set<String> loadedKeywords = reader.lines()
+                    .map(String::trim)
+                    .filter(line -> !line.isBlank() && !line.startsWith("#"))
+                    .map(line -> line.toLowerCase(Locale.ROOT))
+                    .collect(Collectors.toSet());
+
+            if (loadedKeywords.isEmpty()) {
+                throw new IllegalStateException("non_food_keywords.txt is empty");
+            }
+
+            nonFoodKeywords = loadedKeywords;
+        }
+    }
+
+    private void validateNoNonFoodKeywords(FoodImageRequest request) {
+        validateField(request.getName());
+        validateField(request.getCourse());
+        validateField(request.getIngredients());
+        validateField(request.getDishType());
+    }
+
+    private void validateField(String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+
+        String lower = value.toLowerCase(Locale.ROOT);
+        for (String keyword : nonFoodKeywords) {
+            if (lower.contains(keyword)) {
+                throw new InappropriateRequestRefusalException(DEFAULT_REFUSAL_MESSAGE);
+            }
+        }
+    }
+
     @Override
     public String generateFoodImageFromParams(FoodImageRequest request) {
         if (mockEnabled) {
@@ -86,6 +131,7 @@ public class ImageService implements IImageService {
         String name = request.getName();
         String course = request.getCourse();
         String ingredients = request.getIngredients();
+        validateNoNonFoodKeywords(request);
         String dishType = request.getDishType();
         String style = request.getStyle();
         String normalizedSize = getNormalizedSize(request, style);
@@ -129,9 +175,11 @@ public class ImageService implements IImageService {
         try {
             String promptText = String.valueOf(prompt);
             return callMaiImageApi(promptText, width, height);
+        } catch (InappropriateRequestRefusalException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Azure MAI image generation error: {}", e.getMessage(), e);
-            throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
+            throw new InappropriateRequestRefusalException(DEFAULT_REFUSAL_MESSAGE);
         }
     }
 
@@ -165,19 +213,28 @@ public class ImageService implements IImageService {
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonBody = objectMapper.writeValueAsString(requestBody);
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> response = restClient.post()
-                .uri(maiEndpoint)
-                .header("api-key", maiApiKey)
-                .header("Content-Type", "application/json")
-                .body(jsonBody)
-                .retrieve()
-                .body(Map.class);
+        Map<String, Object> response;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = restClient.post()
+                    .uri(maiEndpoint)
+                    .header("api-key", maiApiKey)
+                    .header("Content-Type", "application/json")
+                    .body(jsonBody)
+                    .retrieve()
+                    .body(Map.class);
+            response = body;
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode().value() == 400) {
+                throw new InappropriateRequestRefusalException(DEFAULT_REFUSAL_MESSAGE);
+            }
+            throw e;
+        }
 
         @SuppressWarnings("unchecked")
         List<Map<String, String>> data = (List<Map<String, String>>) response.get("data");
         if (data == null || data.isEmpty()) {
-            throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
+            throw new InappropriateRequestRefusalException(DEFAULT_REFUSAL_MESSAGE);
         }
 
         Map<String, String> result = data.getFirst();
@@ -192,7 +249,7 @@ public class ImageService implements IImageService {
             return result.get("url");
         }
 
-        throw new InappropriateRequestRefusalException("Sorry, I can't help with that request.");
+        throw new InappropriateRequestRefusalException(DEFAULT_REFUSAL_MESSAGE);
     }
 
     private static @NonNull String getNormalizedSize(FoodImageRequest request, String style) {

@@ -1,9 +1,6 @@
 package org.ai.chatbot_backend.auth;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,28 +22,9 @@ public class AuthController {
 
     @Operation(
             summary = "Register a new user",
-            description = "Creates a user account and returns a JWT token on success.",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = RegisterRequest.class),
-                            examples = @ExampleObject(
-                                    name = "Registration request",
-                                    value = """
-                                            {
-                                              "username": "test345",
-                                              "email": "test@example.com",
-                                              "password": "supersecret123"
-                                            }
-                                            """
-                            )
-                    )
-            )
-    )
+            description = "Creates a user account and returns a JWT token on success.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Registration successful",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
+            @ApiResponse(responseCode = "200", description = "Registration successful"),
             @ApiResponse(responseCode = "400", description = "Invalid registration data"),
             @ApiResponse(responseCode = "409", description = "Email already registered"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -58,27 +36,9 @@ public class AuthController {
 
     @Operation(
             summary = "Login",
-            description = "Authenticates user with given credentials and returns a JWT token.",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = AuthRequest.class),
-                            examples = @ExampleObject(
-                                    name = "Login request",
-                                    value = """
-                                            {
-                                              "email": "test@example.com",
-                                              "password": "supersecret123"
-                                            }
-                                            """
-                            )
-                    )
-            )
-    )
+            description = "Authenticates user with given credentials and returns a JWT token.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Login successful",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
+            @ApiResponse(responseCode = "200", description = "Login successful"),
             @ApiResponse(responseCode = "401", description = "Invalid credentials"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })

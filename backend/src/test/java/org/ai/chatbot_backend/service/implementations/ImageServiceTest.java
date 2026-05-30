@@ -1,18 +1,27 @@
 package org.ai.chatbot_backend.service.implementations;
 
+import org.ai.chatbot_backend.dto.FoodImageRequest;
+import org.ai.chatbot_backend.exception.InappropriateRequestRefusalException;
 import org.ai.chatbot_backend.exception.ResourceNotFoundException;
 import org.ai.chatbot_backend.model.Image;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.ImageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -21,6 +30,7 @@ public class ImageServiceTest {
 
     private ImageRepository imageRepository;
     private S3Client r2Client;
+    private RestClient restClient;
     private ImageService imageService;
 
     @BeforeEach
@@ -28,10 +38,13 @@ public class ImageServiceTest {
         UserService userService = mock(UserService.class);
         r2Client = mock(S3Client.class);
         R2Service r2Service = mock(R2Service.class);
-        RestClient restClient = mock(RestClient.class);
+        restClient = mock(RestClient.class);
         imageRepository = mock(ImageRepository.class);
 
         imageService = new ImageService(userService, r2Client, r2Service, restClient, imageRepository);
+        ReflectionTestUtils.setField(imageService, "maiEndpoint", "https://example.com/mai/v1/images/generations");
+        ReflectionTestUtils.setField(imageService, "maiApiKey", "test-key");
+        ReflectionTestUtils.setField(imageService, "nonFoodKeywords", Set.of("hammer", "screw", "nail"));
     }
 
     private User user(long id) {
@@ -97,5 +110,63 @@ public class ImageServiceTest {
 
         assertThrows(RuntimeException.class, () -> failingService.deleteByIdForUser(13L, u));
         verify(imageRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    void generateFoodImageFromParams_maiBadRequest_usesDefaultErrorMessage() {
+        RestClient.RequestBodyUriSpec requestBodyUriSpec = mock(RestClient.RequestBodyUriSpec.class);
+        RestClient.RequestBodySpec requestBodySpec = mock(RestClient.RequestBodySpec.class);
+        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
+
+        when(restClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
+
+        String maiErrorBody = """
+                {"error":{"message":"Request blocked by content filters.","code":"content_filter"}}
+                """;
+        HttpClientErrorException badRequest = HttpClientErrorException.BadRequest.create(
+                HttpStatus.BAD_REQUEST,
+                "Bad Request",
+                HttpHeaders.EMPTY,
+                maiErrorBody.getBytes(StandardCharsets.UTF_8),
+                StandardCharsets.UTF_8
+        );
+        when(responseSpec.body(Map.class)).thenThrow(badRequest);
+
+        FoodImageRequest request = new FoodImageRequest();
+        request.setName("edible cube");
+        request.setStyle("natural");
+        request.setSize("1024x1024");
+        request.setIngredients("tomato, basil, mozzarella");
+
+        InappropriateRequestRefusalException ex = assertThrows(
+                InappropriateRequestRefusalException.class,
+                () -> imageService.generateFoodImageFromParams(request)
+        );
+
+        assertEquals("Sorry, I can only generate images of food.", ex.getMessage());
+        verify(restClient, times(1)).post();
+    }
+
+    @Test
+    void generateFoodImageFromParams_nonFoodKeywordInCourse_rejectedBeforeApiCall() {
+        FoodImageRequest request = new FoodImageRequest();
+        request.setName("test dish");
+        request.setStyle("natural");
+        request.setSize("1024x1024");
+        request.setCourse("main with hammer garnish");
+        request.setIngredients("tomato, basil, mozzarella");
+        request.setDishType("pasta");
+
+        InappropriateRequestRefusalException ex = assertThrows(
+                InappropriateRequestRefusalException.class,
+                () -> imageService.generateFoodImageFromParams(request)
+        );
+
+        assertEquals("Sorry, I can only generate images of food.", ex.getMessage());
+        verifyNoInteractions(restClient);
     }
 }

@@ -2,9 +2,6 @@ package org.ai.chatbot_backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,25 +37,7 @@ public class PasswordResetController {
 
     @Operation(
             summary = "Request password reset email",
-            description = "Sends a password reset email if the user exists. Always returns 202 for unknown users to avoid email enumeration.",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = EmailDetails.class),
-                            examples = @ExampleObject(
-                                    name = "Password reset request",
-                                    value = """
-                                            {
-                                              "recipient": "test@example.com",
-                                              "msgBody": "Reset your password by clicking the link below.",
-                                              "subject": "Reset Password"
-                                            }
-                                            """
-                            )
-                    )
-            )
-    )
+            description = "Sends a password reset email if the user exists. Always returns 202 for unknown users to avoid email enumeration.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "202", description = "Request accepted"),
             @ApiResponse(responseCode = "500", description = "Email failed to send")
@@ -110,22 +89,6 @@ public class PasswordResetController {
     })
     @PostMapping("/auth/password-reset/confirm")
     public ResponseEntity<?> changePassword(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = PasswordDto.class),
-                            examples = @ExampleObject(
-                                    name = "Password reset confirmation",
-                                    value = """
-                                            {
-                                              "token": "1d35ff4a-2b34-457d-aa06-0ecb964e74c1",
-                                              "password": "newpassword123"
-                                            }
-                                            """
-                            )
-                    )
-            )
             @RequestBody PasswordDto newPassword) {
         passwordResetWorkflowService.resetPassword(newPassword.getToken(), newPassword.getPassword());
         return ResponseEntity.noContent().build();
