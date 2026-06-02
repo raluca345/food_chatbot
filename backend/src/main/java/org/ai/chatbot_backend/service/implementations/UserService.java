@@ -14,8 +14,8 @@ import org.ai.chatbot_backend.service.interfaces.IUserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class UserService implements IUserService {
+    public static final String PASSWORD_TOO_LONG_MESSAGE = "Password must be at most 72 bytes";
+    private static final int BCRYPT_MAX_PASSWORD_BYTES = 72;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -38,11 +40,6 @@ public class UserService implements IUserService {
         String normalized = email == null ? null : email.trim().toLowerCase();
         return userRepository.findByEmail(normalized)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-    }
-
-    public Optional<User> findOptionalUserByEmail(String email) {
-        String normalized = email == null ? null : email.trim().toLowerCase();
-        return userRepository.findByEmail(normalized);
     }
 
     @Override
@@ -74,6 +71,7 @@ public class UserService implements IUserService {
         if (trimmedEmail == null || rawPassword == null || trimmedName == null) {
             throw new InvalidUserDataException("Missing required fields");
         }
+        validatePassword(rawPassword);
         if (userRepository.existsByEmail(trimmedEmail)) {
             log.debug("Attempt to register duplicate email: {}", trimmedEmail);
             throw new DuplicateEmailException("Email already registered");
@@ -107,6 +105,7 @@ public class UserService implements IUserService {
         if (password == null) {
             throw new ResourceNotFoundException("Missing required fields");
         }
+        validatePassword(password);
 
         if (passwordEncoder.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("New password cannot be the same as the old password.");
@@ -114,5 +113,11 @@ public class UserService implements IUserService {
 
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
+    }
+
+    public static void validatePassword(String password) {
+        if (password != null && password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_PASSWORD_BYTES) {
+            throw new InvalidUserDataException(PASSWORD_TOO_LONG_MESSAGE);
+        }
     }
 }

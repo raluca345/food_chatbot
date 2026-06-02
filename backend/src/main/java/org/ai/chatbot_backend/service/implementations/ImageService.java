@@ -185,19 +185,10 @@ public class ImageService implements IImageService {
 
     @NotNull
     private static StringBuilder getSystemPrompt() {
-        String systemPrompt = """
-                You are a food-only image generation assistant.
-
-                STRICT RULES:
-                - Generate only edible food or drink.
-                - Refuse requests containing non-food objects or inedible items.
-                - Never reinterpret non-food items as garnish, props, plating, art, or decoration.
-                - Never include tools, hardware, chemicals, drugs, weapons, or other non-food objects.
-
-                If any non-food item is requested, refuse the request and do not generate an image.
-                """;
-        return new StringBuilder(systemPrompt +
-                " Create an image of a dish. ");
+        // Keep system prompt minimal to avoid triggering Azure's content safety filters
+        // validateNoNonFoodKeywords handles filtering of inappropriate requests
+        String systemPrompt = "Create a professional, appetizing food image. ";
+        return new StringBuilder(systemPrompt);
     }
 
     private String callMaiImageApi(String prompt, int width, int height) throws Exception {
@@ -212,6 +203,8 @@ public class ImageService implements IImageService {
         // turn into json string to ensure content-length header is set properly
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonBody = objectMapper.writeValueAsString(requestBody);
+        
+        log.debug("Sending image generation request - Prompt: {}, Dimensions: {}x{}", prompt, width, height);
 
         Map<String, Object> response;
         try {
@@ -225,9 +218,14 @@ public class ImageService implements IImageService {
                     .body(Map.class);
             response = body;
         } catch (HttpClientErrorException e) {
+            log.error("Azure MAI API error - Status: {}, Message: {}, Response: {}", 
+                    e.getStatusCode(), e.getMessage(), e.getResponseBodyAsString());
             if (e.getStatusCode().value() == 400) {
                 throw new InappropriateRequestRefusalException(DEFAULT_REFUSAL_MESSAGE);
             }
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error calling Azure MAI API: {}", e.getMessage(), e);
             throw e;
         }
 

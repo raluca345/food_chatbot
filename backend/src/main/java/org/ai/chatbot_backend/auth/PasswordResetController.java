@@ -1,18 +1,15 @@
-package org.ai.chatbot_backend.controller;
+package org.ai.chatbot_backend.auth;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ai.chatbot_backend.dto.PasswordDto;
 import org.ai.chatbot_backend.email.EmailDetails;
-import org.ai.chatbot_backend.email.EmailService;
-import org.ai.chatbot_backend.model.PasswordResetToken;
-import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.service.implementations.PasswordResetWorkflowService;
-import org.ai.chatbot_backend.service.implementations.UserService;
 import org.ai.chatbot_backend.service.implementations.PasswordResetTokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -30,8 +27,6 @@ public class PasswordResetController {
     @Value("${app.frontend-base-url}")
     private String FRONTEND_BASE_URL;
 
-    private final EmailService emailService;
-    private final UserService userService;
     private final PasswordResetWorkflowService passwordResetWorkflowService;
     private final PasswordResetTokenService passwordResetTokenService;
 
@@ -44,14 +39,10 @@ public class PasswordResetController {
     })
     @PostMapping("/auth/password-reset/request")
     public ResponseEntity<?> sendPasswordResetEmail(@RequestBody EmailDetails emailDetails) {
-        User user = userService.findOptionalUserByEmail(emailDetails.getRecipient()).orElse(null);
-        if (user != null) {
-            PasswordResetToken prt = userService.generatePasswordResetTokenForUser(user);
-            boolean sent = emailService.sendPasswordResetEmail(emailDetails, prt);
-            if (!sent) {
+        boolean sent = passwordResetWorkflowService.sendPasswordResetEmail(emailDetails);
+        if (!sent) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Email failed to send");
-            }
         }
         return ResponseEntity.accepted().build();
     }
@@ -89,7 +80,7 @@ public class PasswordResetController {
     })
     @PostMapping("/auth/password-reset/confirm")
     public ResponseEntity<?> changePassword(
-            @RequestBody PasswordDto newPassword) {
+            @Valid @RequestBody PasswordDto newPassword) {
         passwordResetWorkflowService.resetPassword(newPassword.getToken(), newPassword.getPassword());
         return ResponseEntity.noContent().build();
     }

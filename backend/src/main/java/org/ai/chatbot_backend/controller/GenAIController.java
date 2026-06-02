@@ -292,12 +292,17 @@ public class GenAIController {
             @RequestBody FoodImageRequest request,
             Authentication authentication)
             throws Exception {
-        String tempImageUrl = imageService.generateFoodImageFromParams(request);
-        User user = authHelper.getAuthenticatedUserOrNull(authentication);
-        if (user != null) {
-            ImageDto generatedImage = imageService.persistImageForUser(tempImageUrl, user.getId());
-            return ResponseEntity.ok(generatedImage);
+        try {
+            String tempImageUrl = imageService.generateFoodImageFromParams(request);
+            User user = authHelper.getAuthenticatedUserOrNull(authentication);
+            if (user != null) {
+                ImageDto generatedImage = imageService.persistImageForUser(tempImageUrl, user.getId());
+                return ResponseEntity.ok(generatedImage);
+            }
+            return ResponseEntity.ok(new ImageDto(0L, tempImageUrl, null, null));
+        } catch (Exception e) {
+            log.error("Error generating food image: {}", e.getMessage(), e);
+            throw e;
         }
-        return ResponseEntity.ok(new ImageDto(0L, tempImageUrl, null, null));
     }
 }
