@@ -178,91 +178,95 @@ export default function ConversationList({ isOpen }) {
 
       {isOpen && (
         <div className="conversation-list-wrap">
-          <ul className="conversation-list">
-            {conversations.map((c) => {
-              const id = c.conversationId;
-              const isSelected = String(id) === String(selectedId);
-              const isEditing = String(editingId) === String(id);
+          <div className="conversation-list-scroll">
+            <ul className="conversation-list">
+              {conversations.map((c) => {
+                const id = c.conversationId;
+                const isSelected = String(id) === String(selectedId);
+                const isEditing = String(editingId) === String(id);
 
-              return (
-                <li key={id}>
-                  <div
-                    className={[
-                      "conv-item",
-                      isSelected ? "selected" : "",
-                      isEditing ? "editing" : "",
-                    ].join(" ")}
-                  >
-                    <button
-                      className="conv-link"
-                      onClick={() => !isEditing && navigate(`/home/chat/${id}`)}
+                return (
+                  <li key={id}>
+                    <div
+                      className={[
+                        "conv-item",
+                        isSelected ? "selected" : "",
+                        isEditing ? "editing" : "",
+                      ].join(" ")}
                     >
-                      <span
-                        ref={isEditing ? inputRef : null}
-                        className="conv-title"
-                        contentEditable={isEditing}
-                        suppressContentEditableWarning
-                        spellCheck={false}
-                        onInput={(e) =>
-                          setEditingTitle(e.currentTarget.textContent)
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            saveRename(id);
-                          }
-                          if (e.key === "Escape") {
-                            e.preventDefault();
-                            cancelRename();
-                          }
-                        }}
-                        onBlur={() => isEditing && saveRename(id)}
-                      >
-                        {isEditing ? editingTitle : c.title}
-                      </span>
-                    </button>
-
-                    {!isEditing && (
                       <button
-                        className="conv-ellipsis"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuAnchor(
-                            e.currentTarget.getBoundingClientRect(),
-                          );
-                          setOpenMenuId(openMenuId === id ? null : id);
-                        }}
+                        className="conv-link"
+                        onClick={() =>
+                          !isEditing && navigate(`/home/chat/${id}`)
+                        }
                       >
-                        <FaEllipsis className="inline-icon menu" />
+                        <span
+                          ref={isEditing ? inputRef : null}
+                          className="conv-title"
+                          contentEditable={isEditing}
+                          suppressContentEditableWarning
+                          spellCheck={false}
+                          onInput={(e) =>
+                            setEditingTitle(e.currentTarget.textContent)
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              saveRename(id);
+                            }
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              cancelRename();
+                            }
+                          }}
+                          onBlur={() => isEditing && saveRename(id)}
+                        >
+                          {isEditing ? editingTitle : c.title}
+                        </span>
                       </button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
 
-          {hasMore && (
-            <div className="conv-load-more-wrap">
-              <button
-                className="conv-load-more"
-                onClick={handleLoadMore}
-                disabled={isLoading || isLoadingMore}
-              >
-                {isLoadingMore ? (
-                  <>
-                    <span
-                      className="conv-mini-spinner"
-                      aria-hidden="true"
-                    ></span>
-                    <span>Loading more</span>
-                  </>
-                ) : (
-                  "Load more"
-                )}
-              </button>
-            </div>
-          )}
+                      {!isEditing && (
+                        <button
+                          className="conv-ellipsis"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuAnchor(
+                              e.currentTarget.getBoundingClientRect(),
+                            );
+                            setOpenMenuId(openMenuId === id ? null : id);
+                          }}
+                        >
+                          <FaEllipsis className="inline-icon menu" />
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+
+              {hasMore && (
+                <li className="conv-load-more-item">
+                  <button
+                    className="conv-load-more"
+                    onClick={handleLoadMore}
+                    disabled={isLoading || isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <span
+                          className="conv-mini-spinner"
+                          aria-hidden="true"
+                        ></span>
+                        <span>Loading more</span>
+                      </>
+                    ) : (
+                      "Load more"
+                    )}
+                  </button>
+                </li>
+              )}
+            </ul>
+          </div>
         </div>
       )}
 

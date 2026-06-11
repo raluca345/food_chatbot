@@ -115,7 +115,7 @@ public class UserService implements IUserService {
         userRepository.save(user);
     }
 
-    public static void validatePassword(String password) {
+    public void validatePassword(String password) {
         if (password != null && password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_PASSWORD_BYTES) {
             throw new InvalidUserDataException(PASSWORD_TOO_LONG_MESSAGE);
         }

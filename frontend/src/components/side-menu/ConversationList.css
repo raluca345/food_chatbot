@@ -1,40 +1,40 @@
-.conversation-list {
-  list-style: none;
-  margin: 0;
-  padding: 8px 0px;
-  width: 100%;
-  box-sizing: border-box;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.conversation-list {
-  scrollbar-width: none;
-}
-.conversation-list::-webkit-scrollbar {
-  width: 0;
-}
-.conversation-list:hover {
-  scrollbar-width: thin;
-}
-.conversation-list:hover::-webkit-scrollbar {
-  width: 10px;
-}
-.conversation-list:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-}
-
-.conversation-list li {
-  margin: 0;
-  padding-bottom: 3px;
-}
-
 .conversation-list-wrap {
   display: flex;
   flex-direction: column;
   width: 100%;
+}
+
+.conversation-list-scroll {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.conversation-list-scroll::-webkit-scrollbar {
+  width: 0;
+}
+.conversation-list-scroll:hover {
+  scrollbar-width: thin;
+}
+.conversation-list-scroll:hover::-webkit-scrollbar {
+  width: 10px;
+}
+.conversation-list-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+.conversation-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.conversation-list li {
+  margin: 0;
+  padding: 0;
 }
 
 .conv-item {
@@ -99,7 +99,9 @@
   justify-content: center;
   color: inherit;
   opacity: 0;
-  transition: opacity 120ms ease, background-color 120ms ease;
+  transition:
+    opacity 120ms ease,
+    background-color 120ms ease;
 }
 .conv-ellipsis svg {
   color: inherit;
@@ -160,38 +162,37 @@
   background: rgba(192, 112, 44, 0.12);
 }
 
-.conv-load-more-wrap {
-  padding: 4px 8px 0;
+.conv-load-more-item {
+  list-style: none;
+  padding: 0;
 }
 
 .conv-load-more {
   appearance: none;
   border: none;
-  background: transparent;
-  color: rgba(0, 0, 0, 0.58);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.2;
-  padding: 4px 2px;
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  padding: 8px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 120ms ease, background-color 120ms ease;
+  display: block;
+  width: 100%;
+  text-align: center;
+  transition: background-color 120ms ease;
 }
 
 .conv-load-more:hover,
 .conv-load-more:focus-visible {
-  color: rgba(0, 0, 0, 0.78);
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.1);
   outline: none;
 }
 
 .conv-load-more:disabled {
-  color: rgba(0, 0, 0, 0.45);
+  opacity: 0.4;
   cursor: default;
-  background: transparent;
 }
 
 .conv-mini-spinner {

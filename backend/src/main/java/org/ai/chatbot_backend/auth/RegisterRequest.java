@@ -17,7 +17,7 @@ public class RegisterRequest {
     @NotBlank
     private String username;
     @NotBlank
-    @Email
+    @Email(message = "Must be a well-formed email address")
     private String email;
     @NotBlank
     @Size(min = 8, max = 72, message = "Password must be between 8 and 72 characters")

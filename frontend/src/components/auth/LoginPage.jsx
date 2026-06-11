@@ -46,7 +46,7 @@ export default function LoginPage() {
       console.error("Login error:", err);
       setErrorMessage(
         err?.userMessage ||
-          "Login failed. Please check your credentials and try again."
+          "Login failed. Please check your credentials and try again.",
       );
     }
   };

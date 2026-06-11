@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class AuthRequest {
 
     @NotBlank
-    @Email
+    @Email(message = "Must be a well-formatted email address")
     private String email;
 
     @NotBlank

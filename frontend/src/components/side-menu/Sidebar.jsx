@@ -45,7 +45,7 @@ export default function Sidebar({ isOpen, onToggle }) {
           />
           {renderLabel("Recipe history", () => navigate("/me/recipe-history"))}
         </span>
-        <span>
+        <span className="sidebar-conversations">
           <ConversationList isOpen={isOpen} onToggle={onToggle} />
         </span>
       </div>

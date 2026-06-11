@@ -17,7 +17,8 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform var(--sb-dur) var(--sb-ease),
+  transition:
+    transform var(--sb-dur) var(--sb-ease),
     left var(--sb-dur) var(--sb-ease);
   z-index: 1200;
 }
@@ -47,16 +48,26 @@
   width: auto;
   padding: 6px 0;
   border: none;
-  transition: transform var(--sb-dur) var(--sb-ease),
+  transition:
+    transform var(--sb-dur) var(--sb-ease),
     left var(--sb-dur) var(--sb-ease);
   z-index: 1200;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
 }
 
 .sidebar-group > span {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 12px;
   white-space: nowrap;
+  max-width: 100%;
+}
+.sidebar-conversations {
+  display: block !important;
+  white-space: normal !important;
+  width: 200px;
+  max-width: 200px;
 }
 
 .sidebar-group > span .sidebar-icon:hover,
@@ -70,7 +81,8 @@
   letter-spacing: 0.3px;
   opacity: 0;
   transform: translateX(8px);
-  transition: opacity var(--sb-dur) var(--sb-ease),
+  transition:
+    opacity var(--sb-dur) var(--sb-ease),
     transform var(--sb-dur) var(--sb-ease);
   pointer-events: none;
   background: none;
@@ -95,7 +107,8 @@
   height: 0;
   background: rgba(107, 107, 107, 0.14);
   opacity: 0;
-  transition: height var(--sb-divider-dur) var(--sb-ease),
+  transition:
+    height var(--sb-divider-dur) var(--sb-ease),
     opacity var(--sb-divider-dur) var(--sb-ease);
   z-index: 1100;
   border-left: 1px solid rgba(107, 107, 107, 0.12);

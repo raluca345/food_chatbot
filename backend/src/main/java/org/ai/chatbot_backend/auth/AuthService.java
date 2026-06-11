@@ -32,7 +32,7 @@ public class AuthService {
     public AuthResponse login(AuthRequest request) {
         String email = request.getEmail();
         String password = request.getPassword();
-        UserService.validatePassword(password);
+        userService.validatePassword(password);
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         email,
