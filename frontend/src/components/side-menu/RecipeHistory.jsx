@@ -23,7 +23,7 @@ export default function RecipeHistory() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [expandedIndex, setExpandedIndex] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
   const [deletingIds, setDeletingIds] = useState(new Set());
   const [downloadingIds, setDownloadingIds] = useState(new Set());
   const [page, setPage] = useState(1);
@@ -41,7 +41,7 @@ export default function RecipeHistory() {
         if (!mounted) return;
         setHistoryEntries(Array.isArray(res.items) ? res.items : []);
         setTotal(typeof res.total === "number" ? res.total : null);
-        setExpandedIndex(null);
+        setExpandedId(null);
       })
       .catch((err) => {
         if (!mounted) return;
@@ -60,8 +60,8 @@ export default function RecipeHistory() {
     };
   }, [page]);
 
-  const handleToggle = (index) => {
-    setExpandedIndex((prev) => (prev === index ? null : index));
+  const handleToggle = (id) => {
+    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   const handleDelete = async (entryId, index) => {
@@ -145,10 +145,10 @@ export default function RecipeHistory() {
 
   useEffect(() => {
     Object.keys(panelRefs.current).forEach((k) => {
-      const idx = Number(k);
+      const id = Number(k);
       const panel = panelRefs.current[k];
       if (!panel) return;
-      if (expandedIndex === idx) {
+      if (expandedId === id) {
         panel.style.maxHeight = panel.scrollHeight + "px";
         const onEnd = () => {
           panel.style.maxHeight = "none";
@@ -162,7 +162,7 @@ export default function RecipeHistory() {
         });
       }
     });
-  }, [expandedIndex, historyEntries]);
+  }, [expandedId, historyEntries]);
 
   return (
     <>
@@ -179,15 +179,15 @@ export default function RecipeHistory() {
           </li>
         )}
         {historyEntries.map((entry, index) => (
-          <li className="history-entry" key={entry.id ?? index}>
+          <li className="history-entry" key={entry.id}>
             <button
               className="accordion"
-              onClick={() => handleToggle(index)}
-              aria-expanded={expandedIndex === index}
+              onClick={() => handleToggle(entry.id)}
+              aria-expanded={expandedId === entry.id}
             >
               <FaAngleDown
                 className={`inline-icon arrow ${
-                  expandedIndex === index ? "expanded" : ""
+                  expandedId === entry.id ? "expanded" : ""
                 }`}
               />
               <span className="actions">
@@ -222,9 +222,9 @@ export default function RecipeHistory() {
             </button>
 
             <div
-              ref={(el) => (panelRefs.current[index] = el)}
-              className={`panel ${expandedIndex === index ? "open" : ""}`}
-              aria-hidden={expandedIndex !== index}
+              ref={(el) => (panelRefs.current[entry.id] = el)}
+              className={`panel ${expandedId === entry.id ? "open" : ""}`}
+              aria-hidden={expandedId !== entry.id}
             >
               <ReactMarkdown
                 rehypePlugins={rehypePlugins}
