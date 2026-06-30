@@ -221,7 +221,6 @@ candle
 soap
 shampoo
 lotion
-cream
 perfume
 ink
 paint

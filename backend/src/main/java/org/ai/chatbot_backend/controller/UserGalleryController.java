@@ -104,5 +104,4 @@ public class UserGalleryController {
         return ResponseEntity.noContent().build();
     }
 
-
 }

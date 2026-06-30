@@ -11,16 +11,11 @@ export async function getUserRecipeHistory({ page = 1, pageSize = 10 } = {}) {
   }
 
   const data = await res.json().catch(() => null);
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  if (data && Array.isArray(data.items)) {
-    return {
-      items: data.items,
-      total: Number(data.total) || data.items.length,
-    };
-  }
-  return { items: [], total: 0 };
+
+  return {
+    items: data?.items ?? [],
+    total: Number(data?.total) ?? 0,
+  };
 }
 
 export async function deleteRecipeHistoryEntry(id) {

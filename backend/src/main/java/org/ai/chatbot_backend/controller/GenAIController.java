@@ -299,7 +299,7 @@ public class GenAIController {
                 ImageDto generatedImage = imageService.persistImageForUser(tempImageUrl, user.getId());
                 return ResponseEntity.ok(generatedImage);
             }
-            return ResponseEntity.ok(new ImageDto(0L, tempImageUrl, null, null));
+            return ResponseEntity.ok(new ImageDto(0L, tempImageUrl, tempImageUrl, null, null, null));
         } catch (Exception e) {
             log.error("Error generating food image: {}", e.getMessage(), e);
             throw e;

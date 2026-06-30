@@ -32,7 +32,7 @@ export default function ForgotPassword() {
     try {
       await sendPasswordResetEmail(userEmail, msgBody, subject);
       setSuccessMessage(
-        "We've sent password reset instructions to that email address!"
+        "We've sent password reset instructions to that email address!",
       );
       setEmail("");
     } catch (err) {
@@ -45,7 +45,7 @@ export default function ForgotPassword() {
   const navigate = useNavigate();
 
   const returnToPreviousPage = () => {
-    navigate(-1);
+    navigate("/login");
   };
 
   const returnHome = () => {
@@ -58,7 +58,9 @@ export default function ForgotPassword() {
   }, [navigate]);
 
   return (
-    <div className={`forgot-password ${successMessage ? "forgot-password-success" : ""}`}>
+    <div
+      className={`forgot-password ${successMessage ? "forgot-password-success" : ""}`}
+    >
       <div className="forgot-content">
         {!successMessage && (
           <>

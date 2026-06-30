@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import FoodImageGenerator from "../components/home/FoodImageGenerator";
@@ -8,10 +8,11 @@ import SignUpPage from "../components/auth/SignUpPage";
 import LoginPage from "../components/auth/LoginPage";
 import NotFound from "../components/NotFound";
 import RecipeHistory from "../components/side-menu/RecipeHistory";
-import Gallery from "../components/side-menu/Gallery";
 import ForgotPassword from "../components/auth/ForgotPassword";
 import ResetPassword from "../components/auth/ResetPassword";
 import PublicOnlyRoute from "./PublicOnlyRoute";
+
+const Gallery = lazy(() => import("../components/side-menu/Gallery"));
 
 export default function AppRoutes() {
   return (
@@ -73,7 +74,14 @@ export default function AppRoutes() {
         path="/me/gallery"
         element={
           <ProtectedRoute>
-            <Gallery />
+            {/*lazy loading the gallery since it has lots of images*/}
+            <Suspense
+              fallback={
+                <div className="image-grid image-grid--loading">Loading...</div>
+              }
+            >
+              <Gallery />
+            </Suspense>
           </ProtectedRoute>
         }
       ></Route>
