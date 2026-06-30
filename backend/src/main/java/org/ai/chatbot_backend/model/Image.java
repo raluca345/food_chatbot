@@ -25,6 +25,7 @@ public class Image {
     private User user;
 
     private String filename;
+    private String thumbnailFilename;
 
     private LocalDateTime createdAt;
 }

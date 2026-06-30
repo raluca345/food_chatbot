@@ -12,10 +12,10 @@ public interface IImageService {
 
     PageResult<ImageDto> getImages(User user, int page, int pageSize);
 
-    void deleteById(long id);
     void deleteByIdForUser(long imageId, User user);
 
     Image getImageForUser(long imageId, User user);
 
     ImageContent loadImageContentForUser(long imageId, User user);
+
 }

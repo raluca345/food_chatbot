@@ -147,13 +147,22 @@ export default function Gallery() {
 
   const openModal = (image) => {
     setSelectedImage(image);
-    document.body.style.overflow = "hidden"; // disable scroll
+    document.body.style.overflow = "hidden";
   };
 
   const closeModal = () => {
     setSelectedImage(null);
-    document.body.style.overflow = "auto"; // restore scroll
+    document.body.style.overflow = "auto";
   };
+
+  useEffect(() => {
+    if (!selectedImage) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedImage]);
 
   return (
     <>
@@ -175,30 +184,39 @@ export default function Gallery() {
                 onClick={() => openModal(image)}
               >
                 <img
-                  src={image.url}
+                  src={image.thumbnailUrl}
                   alt={image.alt ?? `Generated ${index}`}
                   loading="lazy"
+                  width="300"
+                  height="300"
+                  decoding="async"
                 />
 
                 <div className="image-actions">
-                  <LuDownload
+                  <button
                     className="image-action-btn image-action-btn-download"
+                    aria-label="Download image"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDownload(image);
                     }}
-                  />
+                  >
+                    <LuDownload />
+                  </button>
                   {deletingIds.includes(image.id) ? (
                     <Spinner className="image-action-spinner" />
                   ) : (
-                    <FaTrashCan
+                    <button
                       className="image-action-btn image-action-btn-danger"
+                      aria-label="Delete image"
                       onClick={(e) => {
                         e.stopPropagation();
                         const img = userImages[index] ?? image;
                         setPendingDeleteImage(img);
                       }}
-                    />
+                    >
+                      <FaTrashCan />
+                    </button>
                   )}
                 </div>
               </div>

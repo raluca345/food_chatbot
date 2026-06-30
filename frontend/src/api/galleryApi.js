@@ -15,16 +15,10 @@ export async function getUserImages({ page = 1, pageSize = 18 } = {}) {
 
   const data = await res.json().catch(() => null);
 
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  if (data && Array.isArray(data.items)) {
-    return {
-      items: data.items,
-      total: Number(data.total) || data.items.length,
-    };
-  }
-  return { items: [], total: 0 };
+  return {
+    items: data?.items ?? [],
+    total: Number(data?.total) ?? 0,
+  };
 }
 
 export async function downloadImage(id) {
@@ -38,7 +32,6 @@ export async function downloadImage(id) {
 
   let filename = "image.png";
   const disposition = res.headers.get("content-disposition");
-  console.log("Disposition: ", disposition);
 
   if (disposition) {
     // Matches simple Content-Disposition filename forms, e.g.:

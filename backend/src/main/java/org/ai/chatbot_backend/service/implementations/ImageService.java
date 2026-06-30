@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.coobird.thumbnailator.Thumbnails;
 import org.ai.chatbot_backend.dto.FoodImageRequest;
 import org.ai.chatbot_backend.dto.ImageContent;
 import org.ai.chatbot_backend.dto.ImageDto;
@@ -16,9 +17,6 @@ import org.ai.chatbot_backend.model.Image;
 import org.ai.chatbot_backend.model.User;
 import org.ai.chatbot_backend.repository.ImageRepository;
 import org.ai.chatbot_backend.service.interfaces.IImageService;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -36,10 +34,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -111,8 +106,14 @@ public class ImageService implements IImageService {
         }
 
         String lower = value.toLowerCase(Locale.ROOT);
+
+        List<String> words = Arrays.stream(lower.split("\\W+"))
+                .filter(s -> !s.isBlank())
+                .toList();
+
         for (String keyword : nonFoodKeywords) {
-            if (lower.contains(keyword)) {
+            if (words.contains(keyword)) {
+                log.warn("Blocked keyword '{}' detected in value '{}'", keyword, value);
                 throw new InappropriateRequestRefusalException(DEFAULT_REFUSAL_MESSAGE);
             }
         }
@@ -128,43 +129,18 @@ public class ImageService implements IImageService {
             throw new InappropriateRequestRefusalException("Sorry, the request is invalid");
         }
 
-        String name = request.getName();
-        String course = request.getCourse();
-        String ingredients = request.getIngredients();
         validateNoNonFoodKeywords(request);
-        String dishType = request.getDishType();
+
         String style = request.getStyle();
         String normalizedSize = getNormalizedSize(request, style);
 
-        StringBuilder templateBuilder = getSystemPrompt();
+        String promptText = buildPrompt(request, style);
 
-        if (name != null && !name.isBlank() && !name.equals("null")) {
-            templateBuilder.append("It has the name: {name}.");
-        }
-
-        if (course != null && !course.isBlank()) {
-            templateBuilder.append(" It is a ").append("{course}").append(".");
-        }
-        if (ingredients != null && !ingredients.isBlank()) {
-            templateBuilder.append(" The ingredients are ").append("{ingredients}").append(".");
-        }
-        if (dishType != null && !dishType.isBlank()) {
-            templateBuilder.append(" The type of dish is ").append("{dishType}").append(".");
-        }
-
-        String template = templateBuilder.toString();
-        PromptTemplate promptTemplate = new PromptTemplate(template);
-
-        Map<String, Object> params = Map.of(
-                "name", name != null ? name : "",
-                "course", course != null ? course : "",
-                "ingredients", ingredients != null ? ingredients : "",
-                "dishType", dishType != null ? dishType : ""
-        );
-        Prompt prompt = promptTemplate.create(params);
-
-        int width, height;
         String[] parts = normalizedSize.split("x");
+
+        int width;
+        int height;
+
         try {
             width = Integer.parseInt(parts[0]);
             height = Integer.parseInt(parts[1]);
@@ -173,7 +149,7 @@ public class ImageService implements IImageService {
         }
 
         try {
-            String promptText = String.valueOf(prompt);
+            log.info("Final MAI prompt: {}", promptText);
             return callMaiImageApi(promptText, width, height);
         } catch (InappropriateRequestRefusalException e) {
             throw e;
@@ -183,12 +159,44 @@ public class ImageService implements IImageService {
         }
     }
 
-    @NotNull
-    private static StringBuilder getSystemPrompt() {
-        // Keep system prompt minimal to avoid triggering Azure's content safety filters
-        // validateNoNonFoodKeywords handles filtering of inappropriate requests
-        String systemPrompt = "Create a professional, appetizing food image. ";
-        return new StringBuilder(systemPrompt);
+    private String buildPrompt(FoodImageRequest request, String style) {
+        StringBuilder prompt = new StringBuilder();
+
+        prompt.append("Create a professional, appetizing ");
+
+        if ("vivid".equalsIgnoreCase(style)) {
+            prompt.append("vibrant, colorful ");
+        } else if ("natural".equalsIgnoreCase(style)) {
+            prompt.append("realistic, natural-looking ");
+        }
+
+        prompt.append("food image.");
+
+        if (request.getName() != null && !request.getName().isBlank()) {
+            prompt.append(" It has the name: ")
+                    .append(request.getName())
+                    .append(".");
+        }
+
+        if (request.getCourse() != null && !request.getCourse().isBlank()) {
+            prompt.append(" It is a ")
+                    .append(request.getCourse())
+                    .append(".");
+        }
+
+        if (request.getIngredients() != null && !request.getIngredients().isBlank()) {
+            prompt.append(" The ingredients are ")
+                    .append(request.getIngredients())
+                    .append(".");
+        }
+
+        if (request.getDishType() != null && !request.getDishType().isBlank()) {
+            prompt.append(" The type of dish is ")
+                    .append(request.getDishType())
+                    .append(".");
+        }
+
+        return prompt.toString();
     }
 
     private String callMaiImageApi(String prompt, int width, int height) throws Exception {
@@ -221,7 +229,11 @@ public class ImageService implements IImageService {
             log.error("Azure MAI API error - Status: {}, Message: {}, Response: {}", 
                     e.getStatusCode(), e.getMessage(), e.getResponseBodyAsString());
             if (e.getStatusCode().value() == 400) {
-                throw new InappropriateRequestRefusalException(DEFAULT_REFUSAL_MESSAGE);
+                log.error("MAI 400 RESPONSE BODY: {}", e.getResponseBodyAsString());
+
+                throw new InappropriateRequestRefusalException(
+                        "MAI API returned 400: " + e.getResponseBodyAsString()
+                );
             }
             throw e;
         } catch (Exception e) {
@@ -283,6 +295,16 @@ public class ImageService implements IImageService {
         return normalizedSize;
     }
 
+    private Path createThumbnail(Path fileName) throws IOException {
+        Path thumbnailFile = Files.createTempFile("thumb-", ".jpg");
+        Thumbnails.of(fileName.toFile())
+                .size(300, 300)
+                .outputFormat("jpg")
+                .toFile(thumbnailFile.toFile());
+
+        return thumbnailFile;
+    }
+
     public ImageDto persistImageForUser(String tempUrl, Long userId) throws Exception {
         Path tempFile = Files.createTempFile("img-", ".png");
 
@@ -299,7 +321,6 @@ public class ImageService implements IImageService {
         }
 
         String filename = "users/" + userId + "/images/" + UUID.randomUUID() + ".png";
-
         r2Client.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucket)
@@ -309,20 +330,35 @@ public class ImageService implements IImageService {
                 tempFile
         );
 
+        Path thumbnailFile = createThumbnail(tempFile);
+        String thumbnailFilename = "users/" + userId + "/thumbnails/" + UUID.randomUUID() + ".jpg";
+        r2Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(thumbnailFilename)
+                        .contentType("image/jpeg")
+                        .build(),
+                thumbnailFile
+        );
+
         String signedUrl = r2Service.generateSignedUrl(filename);
+        String signedThumbnailUrl = r2Service.generateSignedUrl(thumbnailFilename);
 
         User user = userService.findById(userId);
 
         Image image = Image.builder()
                 .user(user)
                 .filename(filename)
+                .thumbnailFilename(thumbnailFilename)
                 .createdAt(LocalDateTime.now())
                 .build();
         Image savedImage = imageRepository.save(image);
 
         Files.deleteIfExists(tempFile);
+        Files.deleteIfExists(thumbnailFile);
 
-        return new ImageDto(savedImage.getId(), signedUrl, savedImage.getFilename(), savedImage.getCreatedAt());
+        return new ImageDto(savedImage.getId(), signedUrl, signedThumbnailUrl, savedImage.getFilename(),
+                savedImage.getThumbnailFilename(), savedImage.getCreatedAt());
     }
 
     @Override
@@ -335,19 +371,14 @@ public class ImageService implements IImageService {
 
         List<ImageDto> items = p.stream().map(img -> {
             String signedUrl = r2Service.generateSignedUrl(img.getFilename());
-            return new ImageDto(img.getId(), signedUrl, img.getFilename(), img.getCreatedAt());
+            String signedThumbnailUrl = img.getThumbnailFilename() == null
+                    ? signedUrl
+                    : r2Service.generateSignedUrl(img.getThumbnailFilename());
+            return new ImageDto(img.getId(), signedUrl, signedThumbnailUrl, img.getFilename(),
+                    img.getThumbnailFilename(), img.getCreatedAt());
         }).toList();
 
         return new PageResult<>(List.copyOf(items), p.getTotalElements());
-    }
-
-    @Override
-    public void deleteById(long id) {
-        if (imageRepository.existsById(id)) {
-            imageRepository.deleteById(id);
-        } else {
-            throw new ResourceNotFoundException("Image with id " + id + " not found");
-        }
     }
 
     @Override
@@ -360,20 +391,29 @@ public class ImageService implements IImageService {
         }
 
         String filename = image.getFilename();
+        String thumbnailFilename = image.getThumbnailFilename();
 
-        try {
-            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(filename)
-                    .build();
-            r2Client.deleteObject(deleteRequest);
-        } catch (S3Exception e) {
-            throw new RuntimeException("Failed to delete image from storage: " + e.awsErrorDetails().errorMessage(), e);
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Failed to delete image from storage", e);
+        deleteObject(filename, "image");
+        if (thumbnailFilename != null && !thumbnailFilename.isBlank()) {
+            deleteObject(thumbnailFilename, "image thumbnail");
         }
 
         imageRepository.deleteById(imageId);
+    }
+
+    private void deleteObject(String key, String label) {
+        try {
+            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .build();
+            r2Client.deleteObject(deleteRequest);
+        } catch (S3Exception e) {
+            throw new RuntimeException("Failed to delete " + label + " from storage: "
+                    + e.awsErrorDetails().errorMessage(), e);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Failed to delete " + label + " from storage", e);
+        }
     }
 
     @Override

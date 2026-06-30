@@ -21,6 +21,8 @@
   border: 1px solid #ddd;
   cursor: pointer;
   transition: 0.2s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 300px;
 }
 
 .image-slot img {
@@ -53,10 +55,14 @@
 }
 
 .image-action-btn {
+  background: none;
+  border: none;
+  padding: 0;
   color: white;
   font-size: 28px;
   cursor: pointer;
   transition: transform 0.15s ease;
+  line-height: 1;
 }
 
 .image-action-btn:hover {

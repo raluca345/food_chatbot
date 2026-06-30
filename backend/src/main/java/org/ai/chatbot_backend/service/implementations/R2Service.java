@@ -2,6 +2,7 @@ package org.ai.chatbot_backend.service.implementations;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -41,6 +42,7 @@ public class R2Service {
                 .build();
     }
 
+    @Cacheable(value = "signedUrls", key = "#key")
     public String generateSignedUrl(String key) {
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)

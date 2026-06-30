@@ -28,10 +28,22 @@ public class ImageDto {
     private String url;
 
     @Schema(
-            description = "Original filename of the image",
+            description = "URL of the image's thumbnail",
+            example = "https://cdn.example.com/images/pasta-carbonara_thumbnail.webp"
+    )
+    private String thumbnailUrl;
+
+    @Schema(
+            description = "The original image's file name",
             example = "pasta_carbonara.jpg"
     )
     private String filename;
+
+    @Schema(
+            description = "The name of the thumbnail of the image",
+            example = "past_carbonara_thumbnail.webp"
+    )
+    private String thumbnailFilename;
 
     @Schema(
             description = "Timestamp when the image was created",
