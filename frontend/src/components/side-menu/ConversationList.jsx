@@ -25,10 +25,10 @@ export default function ConversationList({ isOpen }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
-  const [editingTitle, setEditingTitle] = useState("");
   const [originalTitle, setOriginalTitle] = useState("");
 
   const inputRef = useRef(null);
+  const editingTitleRef = useRef("");
   const mountedRef = useRef(true);
 
   const navigate = useNavigate();
@@ -93,10 +93,12 @@ export default function ConversationList({ isOpen }) {
   useEffect(() => {
     if (editingId && inputRef.current) {
       const el = inputRef.current;
+      el.textContent = originalTitle;
       el.focus();
 
       const range = document.createRange();
       range.selectNodeContents(el);
+      range.collapse(false);
 
       const sel = window.getSelection();
       sel.removeAllRanges();
@@ -110,17 +112,16 @@ export default function ConversationList({ isOpen }) {
   const startRename = (id, currentTitle) => {
     setOpenMenuId(null);
     setEditingId(id);
-    setEditingTitle(currentTitle ?? "");
+    editingTitleRef.current = currentTitle ?? "";
     setOriginalTitle(currentTitle ?? "");
   };
 
   const cancelRename = () => {
     setEditingId(null);
-    setEditingTitle("");
   };
 
   const saveRename = async (id) => {
-    const newTitle = editingTitle.trim();
+    const newTitle = (inputRef.current?.textContent ?? "").trim();
     if (!newTitle) {
       cancelRename();
       return;
@@ -137,7 +138,6 @@ export default function ConversationList({ isOpen }) {
         ),
       );
     } catch (e) {
-      setEditingTitle(originalTitle);
       cancelRename();
       console.error(e.userMessage);
     } finally {
@@ -206,9 +206,9 @@ export default function ConversationList({ isOpen }) {
                           contentEditable={isEditing}
                           suppressContentEditableWarning
                           spellCheck={false}
-                          onInput={(e) =>
-                            setEditingTitle(e.currentTarget.textContent)
-                          }
+                          onInput={(e) => {
+                            editingTitleRef.current = e.currentTarget.textContent;
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
@@ -221,7 +221,7 @@ export default function ConversationList({ isOpen }) {
                           }}
                           onBlur={() => isEditing && saveRename(id)}
                         >
-                          {isEditing ? editingTitle : c.title}
+                          {c.title}
                         </span>
                       </button>
 
